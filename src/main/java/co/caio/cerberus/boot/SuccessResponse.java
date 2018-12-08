@@ -3,7 +3,7 @@ package co.caio.cerberus.boot;
 import co.caio.cerberus.model.SearchResult;
 
 class SuccessResponse extends BaseResponse {
-  public final SearchResult result;
+  public SearchResult result;
 
   @Override
   public boolean isSuccess() {
@@ -11,6 +11,13 @@ class SuccessResponse extends BaseResponse {
   }
 
   SuccessResponse(SearchResult result) {
+    this.result = result;
+  }
+
+  // For testing
+  private SuccessResponse() {}
+
+  private void setResult(SearchResult result) {
     this.result = result;
   }
 }

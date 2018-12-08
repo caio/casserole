@@ -3,19 +3,19 @@ package co.caio.cerberus.boot;
 import co.caio.cerberus.model.SearchQuery;
 import co.caio.cerberus.model.SearchQuery.SortOrder;
 import co.caio.cerberus.search.Searcher;
-import javax.servlet.http.HttpServletRequest;
 import javax.validation.ConstraintViolationException;
 import javax.validation.constraints.Size;
-import org.springframework.core.convert.ConversionFailedException;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.ServletRequestBindingException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ServerWebInputException;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 @RestController
 @Validated
@@ -28,7 +28,7 @@ public class SearchController {
   }
 
   @GetMapping("search")
-  public SuccessResponse search(
+  public Mono<SuccessResponse> search(
       @RequestParam("q")
           @Size(
               min = 3,
@@ -43,26 +43,27 @@ public class SearchController {
     if (order != null) builder.sort(order);
 
     builder.maxResults(maxResults);
+    var query = builder.build();
 
-    return new SuccessResponse(searcher.search(builder.build()));
+    return Mono.fromCallable(() -> new SuccessResponse(searcher.search(query)))
+        .publishOn(Schedulers.parallel());
   }
 
   @ExceptionHandler({
     IllegalStateException.class,
-    ConversionFailedException.class,
+    ServerWebInputException.class,
     ConstraintViolationException.class,
-    ServletRequestBindingException.class
   })
   @ResponseStatus(HttpStatus.UNPROCESSABLE_ENTITY)
   @ResponseBody
-  FailureResponse handleQueryBuildError(HttpServletRequest req, Exception exc) {
-    return FailureResponse.queryError(req.getRequestURI(), exc.getMessage());
+  FailureResponse handleQueryBuildError(Exception exc) {
+    return FailureResponse.queryError(exc.getMessage());
   }
 
   @ExceptionHandler(Exception.class)
   @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
   @ResponseBody
-  FailureResponse handleException(HttpServletRequest req, Exception exc) {
-    return FailureResponse.unknownError(req.getRequestURI(), exc.getMessage());
+  FailureResponse handleException(Exception exc) {
+    return FailureResponse.unknownError(exc.getMessage());
   }
 }
