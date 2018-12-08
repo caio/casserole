@@ -22,8 +22,13 @@ class FailureResponse extends BaseResponse {
     return new FailureResponse(ErrorKind.UNKNOWN_ERROR, message);
   }
 
+  static FailureResponse timeoutError(String message) {
+    return new FailureResponse(ErrorKind.TIMEOUT_ERROR, message);
+  }
+
   enum ErrorKind {
     QUERY_ERROR,
     UNKNOWN_ERROR,
+    TIMEOUT_ERROR,
   }
 }

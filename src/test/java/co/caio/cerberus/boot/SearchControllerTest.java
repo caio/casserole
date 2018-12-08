@@ -3,40 +3,24 @@ package co.caio.cerberus.boot;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import co.caio.cerberus.boot.FailureResponse.ErrorKind;
 import co.caio.cerberus.model.SearchResult;
-import co.caio.cerberus.search.Searcher;
+import java.time.Duration;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
-import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpStatus;
-import org.springframework.test.web.reactive.server.WebTestClient;
 
-@WebFluxTest(SearchController.class)
-@AutoConfigureWebTestClient
-class SearchControllerTest {
+class SearchControllerTest extends BaseSearchControllerTest {
 
-  @Autowired WebTestClient testClient;
-  @MockBean Searcher searcher;
-
-  private void expectFailure(String uri, HttpStatus status, ErrorKind kind) {
-    var result =
-        testClient
-            .get()
-            .uri(uri)
-            .exchange()
-            .expectStatus()
-            .isEqualTo(status)
-            .expectBody(FailureResponse.class)
-            .returnResult()
-            .getResponseBody();
-
-    assertFalse(result.isSuccess());
-    assertEquals(kind, result.error);
+  @TestConfiguration
+  static class TestConfig {
+    @Bean("searchTimeout")
+    public Duration timeout() {
+      // No timeout
+      return Duration.ofMillis(Long.MAX_VALUE);
+    }
   }
 
   @Test

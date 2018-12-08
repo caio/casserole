@@ -3,8 +3,11 @@ package co.caio.cerberus.boot;
 import co.caio.cerberus.model.SearchQuery;
 import co.caio.cerberus.model.SearchQuery.SortOrder;
 import co.caio.cerberus.search.Searcher;
+import java.time.Duration;
+import java.util.concurrent.TimeoutException;
 import javax.validation.ConstraintViolationException;
 import javax.validation.constraints.Size;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -22,9 +25,11 @@ import reactor.core.scheduler.Schedulers;
 public class SearchController {
 
   private final Searcher searcher;
+  private final Duration timeout;
 
-  public SearchController(Searcher injectedSearcher) {
-    searcher = injectedSearcher;
+  public SearchController(Searcher searcher, @Qualifier("searchTimeout") Duration timeout) {
+    this.searcher = searcher;
+    this.timeout = timeout;
   }
 
   @GetMapping("search")
@@ -46,7 +51,8 @@ public class SearchController {
     var query = builder.build();
 
     return Mono.fromCallable(() -> new SuccessResponse(searcher.search(query)))
-        .publishOn(Schedulers.parallel());
+        .publishOn(Schedulers.parallel())
+        .timeout(timeout);
   }
 
   @ExceptionHandler({
@@ -58,6 +64,13 @@ public class SearchController {
   @ResponseBody
   FailureResponse handleQueryBuildError(Exception exc) {
     return FailureResponse.queryError(exc.getMessage());
+  }
+
+  @ExceptionHandler
+  @ResponseStatus(HttpStatus.REQUEST_TIMEOUT)
+  @ResponseBody
+  Mono<FailureResponse> handleTimeout(TimeoutException exc) {
+    return Mono.just(FailureResponse.timeoutError(exc.getMessage()));
   }
 
   @ExceptionHandler(Exception.class)
