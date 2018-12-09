@@ -47,8 +47,10 @@ public class SearchController {
               break;
             case "sort":
               builder.sort(value);
+              break;
             case "ni":
               builder.numIngredients(RangedSpec.fromString(value));
+              break;
             default:
               throw new ServerWebInputException("Unknown parameter " + param);
           }
