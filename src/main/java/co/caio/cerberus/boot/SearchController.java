@@ -1,15 +1,13 @@
 package co.caio.cerberus.boot;
 
 import co.caio.cerberus.model.SearchQuery;
-import co.caio.cerberus.model.SearchQuery.SortOrder;
 import co.caio.cerberus.search.Searcher;
 import java.time.Duration;
+import java.util.Map;
 import java.util.concurrent.TimeoutException;
 import javax.validation.ConstraintViolationException;
-import javax.validation.constraints.Size;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -21,7 +19,6 @@ import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
 @RestController
-@Validated
 public class SearchController {
 
   private final Searcher searcher;
@@ -33,21 +30,25 @@ public class SearchController {
   }
 
   @GetMapping("search")
-  public Mono<SuccessResponse> search(
-      @RequestParam("q")
-          @Size(
-              min = 3,
-              max = 1000,
-              message = "Query must be of at least two characters (max 1000)")
-          String fulltext,
-      @RequestParam(value = "n", defaultValue = "10") int maxResults,
-      @RequestParam(value = "sort", required = false) SortOrder order) {
+  public Mono<SuccessResponse> search(@RequestParam Map<String, String> params) {
     var builder = new SearchQuery.Builder();
 
-    if (fulltext != null) builder.fulltext(fulltext);
-    if (order != null) builder.sort(order);
+    params.forEach(
+        (param, value) -> {
+          switch (param) {
+            case "q":
+              builder.fulltext(value);
+              break;
+            case "n":
+              builder.maxResults(Integer.parseInt(value));
+              break;
+            case "sort":
+              builder.sort(value);
+            default:
+              throw new ServerWebInputException("Unknown parameter " + param);
+          }
+        });
 
-    builder.maxResults(maxResults);
     var query = builder.build();
 
     return Mono.fromCallable(() -> new SuccessResponse(searcher.search(query)))

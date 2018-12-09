@@ -43,6 +43,14 @@ class SearchControllerTest extends BaseSearchControllerTest {
   }
 
   @Test
+  void unknownParameterTriggersError() {
+    expectFailure(
+        "/search?q=valid query&unknownParam=drop",
+        HttpStatus.UNPROCESSABLE_ENTITY,
+        ErrorKind.QUERY_ERROR);
+  }
+
+  @Test
   void apiReturnsJsonOnSuccess() {
     var searchResult =
         new SearchResult.Builder()
