@@ -5,13 +5,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 
 import co.caio.cerberus.boot.FailureResponse.ErrorKind;
-import co.caio.cerberus.model.SearchQuery.Builder;
-import co.caio.cerberus.model.SearchQuery.RangedSpec;
-import co.caio.cerberus.model.SearchQuery.SortOrder;
 import co.caio.cerberus.model.SearchResult;
 import java.time.Duration;
 import java.util.List;
-import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -94,37 +90,5 @@ class SearchControllerTest extends BaseSearchControllerTest {
 
     assertTrue(response.isSuccess());
     assertEquals(searchResult, response.result);
-  }
-
-  @Test
-  void queryIsBuiltCorrectly() {
-
-    var inputToQuery =
-        Map.of(
-            "q=oil", new Builder().fulltext("oil").build(),
-            "q=oil&sort=cook_time", new Builder().fulltext("oil").sort(SortOrder.COOK_TIME).build(),
-            "q=oil&n=42", new Builder().fulltext("oil").maxResults(42).build(),
-            "q=oil&ni=10",
-                new Builder().fulltext("oil").numIngredients(RangedSpec.of(0, 10)).build());
-
-    inputToQuery.forEach(
-        (input, query) -> {
-          var searchResult = fakeResult(input);
-
-          given(searcher.search(query)).willReturn(searchResult);
-
-          var response =
-              testClient
-                  .get()
-                  .uri("/search?" + input)
-                  .exchange()
-                  .expectStatus()
-                  .isOk()
-                  .expectBody(SuccessResponse.class)
-                  .returnResult()
-                  .getResponseBody();
-
-          assertEquals(searchResult, response.result);
-        });
   }
 }
