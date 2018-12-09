@@ -1,9 +1,12 @@
 package co.caio.cerberus.boot;
 
 import co.caio.cerberus.model.SearchQuery;
+import co.caio.cerberus.model.SearchQuery.RangedSpec;
 import co.caio.cerberus.search.Searcher;
 import java.time.Duration;
+import java.util.InputMismatchException;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.concurrent.TimeoutException;
 import javax.validation.ConstraintViolationException;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -44,6 +47,8 @@ public class SearchController {
               break;
             case "sort":
               builder.sort(value);
+            case "ni":
+              builder.numIngredients(RangedSpec.fromString(value));
             default:
               throw new ServerWebInputException("Unknown parameter " + param);
           }
@@ -60,6 +65,9 @@ public class SearchController {
     IllegalStateException.class,
     ServerWebInputException.class,
     ConstraintViolationException.class,
+    InputMismatchException.class,
+    NoSuchElementException.class,
+    NumberFormatException.class,
   })
   @ResponseStatus(HttpStatus.UNPROCESSABLE_ENTITY)
   @ResponseBody

@@ -7,6 +7,7 @@ import static org.mockito.BDDMockito.given;
 import co.caio.cerberus.boot.FailureResponse.ErrorKind;
 import co.caio.cerberus.model.SearchResult;
 import java.time.Duration;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -48,6 +49,17 @@ class SearchControllerTest extends BaseSearchControllerTest {
         "/search?q=valid query&unknownParam=drop",
         HttpStatus.UNPROCESSABLE_ENTITY,
         ErrorKind.QUERY_ERROR);
+  }
+
+  @Test
+  void invalidRangeTriggersCorrectError() {
+    var prefix = "/search?q=salt&ni=";
+    var badRanges = List.of("1notANumber", "10,bad", "100,1", "1,2,3", "42,", ",5");
+
+    badRanges.forEach(
+        spec -> {
+          expectFailure(prefix + spec, HttpStatus.UNPROCESSABLE_ENTITY, ErrorKind.QUERY_ERROR);
+        });
   }
 
   @Test
