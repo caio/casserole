@@ -5,7 +5,6 @@ import co.caio.cerberus.model.SearchQuery.RangedSpec;
 import co.caio.cerberus.model.SearchQuery.SortOrder;
 import java.util.Map;
 import java.util.Scanner;
-import org.springframework.web.server.ServerWebInputException;
 
 class SearchParameterParser {
   SearchQuery buildQuery(Map<String, String> params) {
@@ -27,7 +26,7 @@ class SearchParameterParser {
               builder.numIngredients(parseRange(value));
               break;
             default:
-              throw new ServerWebInputException("Unknown parameter " + param);
+              throw new SearchParameterException("Unknown parameter " + param);
           }
         });
 

@@ -6,6 +6,7 @@ import co.caio.cerberus.boot.SearchParameterParser.SearchParameterException;
 import co.caio.cerberus.model.SearchQuery;
 import co.caio.cerberus.model.SearchQuery.RangedSpec;
 import co.caio.cerberus.model.SearchQuery.SortOrder;
+import java.util.Collections;
 import java.util.HashMap;
 import org.junit.jupiter.api.Test;
 
@@ -29,6 +30,13 @@ class SearchParameterParserTest {
 
     input.put("ni", "5,10");
     assertEquals(parser.buildQuery(input), builder.numIngredients(RangedSpec.of(5, 10)).build());
+  }
+
+  @Test
+  void unknownParameterThrows() {
+    assertThrows(
+        SearchParameterException.class,
+        () -> parser.buildQuery(Collections.singletonMap("unknown", "doesn't matter")));
   }
 
   @Test
