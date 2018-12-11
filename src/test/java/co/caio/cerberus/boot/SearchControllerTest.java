@@ -56,10 +56,19 @@ class SearchControllerTest extends BaseSearchControllerTest {
     var prefix = "/search?q=salt&ni=";
     var badRanges = List.of("1notANumber", "10,bad", "100,1", "1,2,3", "42,", ",5");
 
-    badRanges.forEach(
-        spec -> {
-          expectFailure(prefix + spec, HttpStatus.UNPROCESSABLE_ENTITY, ErrorKind.QUERY_ERROR);
-        });
+    for (String spec : badRanges) {
+      expectFailure(prefix + spec, HttpStatus.UNPROCESSABLE_ENTITY, ErrorKind.QUERY_ERROR);
+    }
+  }
+
+  @Test
+  void badNumericParameterTriggersCorrectError() {
+    var prefix = "/search?q=oil";
+    var queries = List.of("&n=-10", "&n=notAnumber", "&n=4.2");
+
+    for (String spec : queries) {
+      expectFailure(prefix + spec, HttpStatus.UNPROCESSABLE_ENTITY, ErrorKind.QUERY_ERROR);
+    }
   }
 
   private SearchResult fakeResult(String name) {

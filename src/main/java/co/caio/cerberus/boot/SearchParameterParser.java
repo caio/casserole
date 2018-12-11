@@ -17,7 +17,10 @@ class SearchParameterParser {
               builder.fulltext(value);
               break;
             case "n":
-              builder.maxResults(Integer.parseInt(value));
+              builder.maxResults(parseUnsignedInt(value));
+              break;
+            case "nf":
+              builder.maxFacets(parseUnsignedInt(value));
               break;
             case "sort":
               builder.sort(parseSortOrder(value));
@@ -31,6 +34,14 @@ class SearchParameterParser {
         });
 
     return builder.build();
+  }
+
+  private int parseUnsignedInt(String value) {
+    try {
+      return Integer.parseUnsignedInt(value);
+    } catch (NumberFormatException ex) {
+      throw new SearchParameterException("Can't parse a number >= 0 from " + value);
+    }
   }
 
   SortOrder parseSortOrder(String order) {
@@ -59,7 +70,7 @@ class SearchParameterParser {
         }
         return spec;
       } else {
-        return RangedSpec.of(0, Integer.parseInt(input));
+        return RangedSpec.of(0, parseUnsignedInt(input));
       }
     } catch (SearchParameterException rethrown) {
       throw rethrown;

@@ -30,6 +30,9 @@ class SearchParameterParserTest {
 
     input.put("ni", "5,10");
     assertEquals(parser.buildQuery(input), builder.numIngredients(RangedSpec.of(5, 10)).build());
+
+    input.put("nf", "12");
+    assertEquals(parser.buildQuery(input), builder.maxFacets(12).build());
   }
 
   @Test
