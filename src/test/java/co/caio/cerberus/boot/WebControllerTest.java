@@ -5,8 +5,10 @@ import static org.mockito.BDDMockito.given;
 
 import co.caio.cerberus.model.SearchResult;
 import co.caio.cerberus.search.Searcher;
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import java.time.Duration;
 import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.stubbing.Answer;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,14 +24,26 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 class WebControllerTest {
 
   @Autowired WebTestClient testClient;
+  @Autowired CircuitBreaker breaker;
+
   @MockBean Searcher searcher;
 
   @TestConfiguration
   static class TestConfig {
     @Bean("searchTimeout")
-    static Duration getTimeout() {
+    Duration getTimeout() {
       return Duration.ofMillis(100);
     }
+
+    @Bean
+    CircuitBreaker getCircuitBreaker() {
+      return CircuitBreaker.ofDefaults("test");
+    }
+  }
+
+  @BeforeEach
+  void resetCircuitBreakerState() {
+    breaker.reset();
   }
 
   @Test
@@ -50,6 +64,17 @@ class WebControllerTest {
     for (String badQuery : badQueries) {
       assertGet("/search?" + badQuery, HttpStatus.BAD_REQUEST);
     }
+  }
+
+  @Test
+  void circuitOpensAfterManyErrors() {
+    given(searcher.search(any())).willThrow(RuntimeException.class);
+    // error rate of 100%, but the default ring buffer is of 100 so
+    // the circuit should only open after the 100th request
+    for (int i = 0; i < 100; i++) {
+      assertGet("/search?q=bacon", HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+    assertGet("/search?q=bacon", HttpStatus.SERVICE_UNAVAILABLE);
   }
 
   @Test

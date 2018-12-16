@@ -3,6 +3,9 @@ package co.caio.cerberus.boot;
 import co.caio.cerberus.boot.SearchParameterParser.SearchParameterException;
 import co.caio.cerberus.model.SearchQuery;
 import co.caio.cerberus.search.Searcher;
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerOpenException;
+import io.github.resilience4j.reactor.circuitbreaker.operator.CircuitBreakerOperator;
 import io.micrometer.core.annotation.Timed;
 import java.time.Duration;
 import java.util.Map;
@@ -27,11 +30,14 @@ public class WebController {
   private final Searcher searcher;
   private final Duration timeout;
   private final SearchParameterParser parser;
+  private final CircuitBreaker breaker;
 
-  public WebController(Searcher searcher, @Qualifier("searchTimeout") Duration timeout) {
+  public WebController(
+      Searcher searcher, @Qualifier("searchTimeout") Duration timeout, CircuitBreaker breaker) {
     this.searcher = searcher;
     this.timeout = timeout;
     this.parser = new SearchParameterParser();
+    this.breaker = breaker;
   }
 
   @GetMapping("/")
@@ -40,8 +46,8 @@ public class WebController {
     return views.index.template("Cerberus").render().toString();
   }
 
-  @GetMapping("/search")
   @Timed
+  @GetMapping("/search")
   @ResponseBody
   public Mono<String> search(@RequestParam Map<String, String> params) {
     SearchQuery query = parser.buildQuery(params);
@@ -51,8 +57,9 @@ public class WebController {
               // System.out.println(Thread.currentThread().getName());
               return views.search.template(searcher.search(query)).render().toString();
             })
-        .subscribeOn(Schedulers.parallel())
-        .timeout(timeout);
+        .publishOn(Schedulers.parallel())
+        .timeout(timeout)
+        .transform(CircuitBreakerOperator.of(breaker));
   }
 
   @ExceptionHandler({
@@ -74,6 +81,14 @@ public class WebController {
     return ResponseEntity.status(HttpStatus.REQUEST_TIMEOUT)
         .contentType(MediaType.TEXT_HTML)
         .body(views.index.template("Timeout: " + ex.getMessage()).render().toString());
+  }
+
+  @ExceptionHandler
+  @ResponseBody
+  ResponseEntity<String> handleCircuitBreaker(CircuitBreakerOpenException ex) {
+    return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+        .contentType(MediaType.TEXT_HTML)
+        .body(views.index.template("Circuit Breaker: " + ex.getMessage()).render().toString());
   }
 
   @ExceptionHandler
