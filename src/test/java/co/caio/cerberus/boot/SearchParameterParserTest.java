@@ -25,11 +25,17 @@ class SearchParameterParserTest {
     input.put("sort", "cook_time");
     assertEquals(parser.buildQuery(input), builder.sort(SortOrder.COOK_TIME).build());
 
-    input.put("n", "42");
-    assertEquals(parser.buildQuery(input), builder.maxResults(42).build());
-
     input.put("ni", "5,10");
     assertEquals(parser.buildQuery(input), builder.numIngredients(RangedSpec.of(5, 10)).build());
+
+    input.put("page", "1");
+    assertEquals(parser.buildQuery(input), builder.build());
+
+    input.put("page", "2");
+    assertEquals(parser.buildQuery(input), builder.offset(10).build());
+
+    input.put("page", "4");
+    assertEquals(parser.buildQuery(input), builder.offset(30).build());
 
     input.put("nf", "12");
     assertEquals(parser.buildQuery(input), builder.maxFacets(12).build());
