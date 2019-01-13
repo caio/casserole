@@ -8,8 +8,11 @@ import io.github.resilience4j.circuitbreaker.CircuitBreakerOpenException;
 import io.github.resilience4j.reactor.circuitbreaker.operator.CircuitBreakerOperator;
 import io.micrometer.core.annotation.Timed;
 import java.time.Duration;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -41,18 +44,16 @@ public class WebController {
     this.breaker = breaker;
   }
 
-  private Map<String, String> baseModel = Map.of(
-      "site_title", "gula.recipes",
-
-      "page_title", "something",
-      "page_description", "",
-
-      "search_title", "Search 950+k Recipes",
-      "search_subtitle", "Find recipes, not ads",
-      "search_placeholder", "Ingredients, diets, brands, etc.",
-      "search_value", "",
-      "search_text", "Search"
-  );
+  private Map<String, String> baseModel =
+      Map.of(
+          "site_title", "gula.recipes",
+          "page_title", "something",
+          "page_description", "",
+          "search_title", "Search 950+k Recipes",
+          "search_subtitle", "Find recipes, not ads",
+          "search_placeholder", "Ingredients, diets, brands, etc.",
+          "search_value", "",
+          "search_text", "Search");
 
   @GetMapping("/")
   public Rendering index() {
@@ -61,14 +62,47 @@ public class WebController {
 
   @Timed
   @GetMapping("/search")
-  @ResponseBody
-  public Mono<String> search(@RequestParam Map<String, String> params) {
+  public Mono<Rendering> search(@RequestParam Map<String, String> params) {
     SearchQuery query = parser.buildQuery(params);
 
     return Mono.fromCallable(
             () -> {
               // System.out.println(Thread.currentThread().getName());
-              return views.search.template(searcher.search(query)).render().toString();
+              var results = searcher.search(query);
+
+              var model = new HashMap<String, Object>(baseModel);
+              var startIdx = query.offset() + 1;
+              model.put("pagination_start", startIdx);
+              model.put("pagination_end", results.recipes().size() + startIdx);
+              model.put("pagination_max", results.totalHits());
+              // FIXME ;page=Number gets lost after building query
+              // FIXME need original query for the next/prev urls too
+              model.put("pagination_next_href", "");
+              model.put("pagination_prev_href", startIdx == 1 ? null : "/search?");
+
+              var recipes =
+                  results
+                      .recipes()
+                      .stream()
+                      .map(
+                          srr -> {
+                            List<Map<String, Object>> meta = List.of(); // FIXME
+                            return Map.of(
+                                "name",
+                                srr.name(),
+                                "href",
+                                srr.crawlUrl(),
+                                "site",
+                                "nowhere.local", // FIXME
+                                "description",
+                                "", // FIXME
+                                "meta",
+                                meta);
+                          })
+                      .collect(Collectors.toList());
+              model.put("recipes", recipes);
+
+              return Rendering.view("search").model(model).build();
             })
         .publishOn(Schedulers.parallel())
         .timeout(timeout)
