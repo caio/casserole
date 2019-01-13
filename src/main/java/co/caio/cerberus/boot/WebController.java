@@ -15,14 +15,10 @@ import java.util.concurrent.TimeoutException;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.reactive.result.view.Rendering;
 import org.springframework.web.server.ServerWebInputException;
 import reactor.core.publisher.Mono;
@@ -47,7 +43,6 @@ public class WebController {
   private Map<String, String> baseModel =
       Map.of(
           "site_title", "gula.recipes",
-          "page_title", "something",
           "page_description", "",
           "search_title", "Search 950+k Recipes",
           "search_subtitle", "Find recipes, not ads",
@@ -72,6 +67,7 @@ public class WebController {
 
               var model = new HashMap<String, Object>(baseModel);
               var startIdx = query.offset() + 1;
+              model.put("page_title", "Search Results");
               model.put("pagination_start", startIdx);
               model.put("pagination_end", results.recipes().size() + startIdx);
               model.put("pagination_max", results.totalHits());
@@ -114,36 +110,42 @@ public class WebController {
     ServerWebInputException.class,
     SearchParameterException.class
   })
-  @ResponseStatus(HttpStatus.BAD_REQUEST)
-  @ResponseBody
-  ResponseEntity<String> handleBadParameters(Exception ex) {
-    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-        .contentType(MediaType.TEXT_HTML)
-        .body(views.index.template("Bad parameter: " + ex.getMessage()).render().toString());
+  Rendering handleBadParameters(Exception ex) {
+    // FIXME use a proper error view
+    return Rendering.view("index")
+        .model(baseModel)
+        .modelAttribute("page_title", "Error: bad parameter")
+        .status(HttpStatus.BAD_REQUEST)
+        .build();
   }
 
   @ExceptionHandler
-  @ResponseBody
-  ResponseEntity<String> handleTimeout(TimeoutException ex) {
-    return ResponseEntity.status(HttpStatus.REQUEST_TIMEOUT)
-        .contentType(MediaType.TEXT_HTML)
-        .body(views.index.template("Timeout: " + ex.getMessage()).render().toString());
+  Rendering handleTimeout(TimeoutException ex) {
+    // FIXME use a proper error view
+    return Rendering.view("index")
+        .model(baseModel)
+        .modelAttribute("page_title", "Timeout")
+        .status(HttpStatus.REQUEST_TIMEOUT)
+        .build();
   }
 
   @ExceptionHandler
-  @ResponseBody
-  ResponseEntity<String> handleCircuitBreaker(CircuitBreakerOpenException ex) {
-    return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
-        .contentType(MediaType.TEXT_HTML)
-        .body(views.index.template("Circuit Breaker: " + ex.getMessage()).render().toString());
+  Rendering handleCircuitBreaker(CircuitBreakerOpenException ex) {
+    // FIXME use a proper error view
+    return Rendering.view("index")
+        .model(baseModel)
+        .modelAttribute("page_title", "Circuit Breaker")
+        .status(HttpStatus.SERVICE_UNAVAILABLE)
+        .build();
   }
 
   @ExceptionHandler
-  @ResponseBody
-  ResponseEntity<String> handleUnknown(Exception ex) {
-    var msg = ex.getMessage();
-    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-        .contentType(MediaType.TEXT_HTML)
-        .body(views.index.template(msg != null ? msg : ex.toString()).render().toString());
+  Rendering handleUnknown(Exception ex) {
+    // FIXME use a proper error view
+    return Rendering.view("index")
+        .model(baseModel)
+        .modelAttribute("page_title", "Unknown Error")
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .build();
   }
 }
