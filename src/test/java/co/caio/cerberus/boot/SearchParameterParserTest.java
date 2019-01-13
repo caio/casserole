@@ -1,5 +1,6 @@
 package co.caio.cerberus.boot;
 
+import static co.caio.cerberus.boot.SearchParameterParser.PAGE_SIZE;
 import static org.junit.jupiter.api.Assertions.*;
 
 import co.caio.cerberus.boot.SearchParameterParser.SearchParameterException;
@@ -17,7 +18,7 @@ class SearchParameterParserTest {
   @Test
   void buildQuery() {
     var input = new HashMap<String, String>();
-    var builder = new SearchQuery.Builder();
+    var builder = new SearchQuery.Builder().maxResults(PAGE_SIZE);
 
     input.put("q", "oil");
     assertEquals(parser.buildQuery(input), builder.fulltext("oil").build());
@@ -32,10 +33,10 @@ class SearchParameterParserTest {
     assertEquals(parser.buildQuery(input), builder.build());
 
     input.put("page", "2");
-    assertEquals(parser.buildQuery(input), builder.offset(10).build());
+    assertEquals(parser.buildQuery(input), builder.offset(PAGE_SIZE).build());
 
     input.put("page", "4");
-    assertEquals(parser.buildQuery(input), builder.offset(30).build());
+    assertEquals(parser.buildQuery(input), builder.offset((4 - 1) * PAGE_SIZE).build());
 
     input.put("nf", "12");
     assertEquals(parser.buildQuery(input), builder.maxFacets(12).build());

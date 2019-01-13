@@ -7,7 +7,7 @@ import java.util.Map;
 import java.util.Scanner;
 
 class SearchParameterParser {
-  private static final int PAGE_SIZE = 10;
+  static final int PAGE_SIZE = 20;
 
   SearchQuery buildQuery(Map<String, String> params) {
     var builder = new SearchQuery.Builder().maxResults(PAGE_SIZE);
