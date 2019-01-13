@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.reactive.result.view.Rendering;
 import org.springframework.web.server.ServerWebInputException;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
@@ -40,10 +41,22 @@ public class WebController {
     this.breaker = breaker;
   }
 
+  private Map<String, String> baseModel = Map.of(
+      "site_title", "gula.recipes",
+
+      "page_title", "something",
+      "page_description", "",
+
+      "search_title", "Search 950+k Recipes",
+      "search_subtitle", "Find recipes, not ads",
+      "search_placeholder", "Ingredients, diets, brands, etc.",
+      "search_value", "",
+      "search_text", "Search"
+  );
+
   @GetMapping("/")
-  @ResponseBody
-  public String index() {
-    return views.index.template("Cerberus").render().toString();
+  public Rendering index() {
+    return Rendering.view("index").model(baseModel).build();
   }
 
   @Timed
