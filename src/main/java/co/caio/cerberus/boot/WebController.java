@@ -1,7 +1,11 @@
 package co.caio.cerberus.boot;
 
+import static co.caio.cerberus.boot.SearchParameterParser.PAGE_SIZE;
+
 import co.caio.cerberus.boot.SearchParameterParser.SearchParameterException;
 import co.caio.cerberus.model.SearchQuery;
+import co.caio.cerberus.model.SearchResult;
+import co.caio.cerberus.model.SearchResultRecipe;
 import co.caio.cerberus.search.Searcher;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerOpenException;
@@ -44,8 +48,8 @@ public class WebController {
       Map.of(
           "site_title", "gula.recipes",
           "page_description", "",
-          "search_title", "Search Over a Million Recipes",
-          "search_subtitle", "Find recipes, not ads",
+          "search_title", "Search for Recipes",
+          "search_subtitle", "Over a million delicious recipes, zero ads",
           "search_placeholder", "Ingredients, diets, brands, etc.",
           "search_value", "",
           "search_text", "Search");
@@ -55,54 +59,71 @@ public class WebController {
     return Rendering.view("index").model(baseModel).build();
   }
 
+  private List<Map<String, Object>> renderRecipes(List<SearchResultRecipe> recipes) {
+    return recipes
+        .stream()
+        .map(
+            srr -> {
+              List<Map<String, Object>> meta = List.of(); // FIXME
+              return Map.of(
+                  "name",
+                  srr.name(),
+                  "href",
+                  srr.crawlUrl(),
+                  "site",
+                  "nowhere.local", // FIXME
+                  "description",
+                  "", // FIXME
+                  "meta",
+                  meta);
+            })
+        .collect(Collectors.toList());
+  }
+
+  private Rendering renderSearch(SearchQuery query, SearchResult result) {
+    var model = new HashMap<String, Object>(baseModel);
+    model.put("page_title", "Search Results");
+    model.put("search_value", query.fulltext().orElse(""));
+    model.put("search_text", "Search again");
+
+    // FIXME test each result state
+    if (result.totalHits() == 0) {
+      return Rendering.view("zero_results").model(model).build();
+    } else if (query.offset() >= result.totalHits()) {
+      // over pagination
+      return renderError(
+          "Invalid Page Number", "No more results to show for this search", HttpStatus.BAD_REQUEST);
+    } else {
+      // normal results
+      boolean isLastPage = query.offset() + PAGE_SIZE >= result.totalHits();
+      int currentPage = (query.offset() / PAGE_SIZE) + 1;
+
+      // FIXME proper pagination hrefs
+      model.put("pagination_next_href", isLastPage ? null : "next_page");
+      model.put("pagination_prev_href", currentPage == 1 ? null : "prev_page");
+
+      var startIdx = query.offset() + 1;
+      model.put("pagination_start", query.offset() + 1);
+      model.put("pagination_end", result.recipes().size());
+      model.put("pagination_max", result.totalHits());
+
+      model.put("recipes", renderRecipes(result.recipes()));
+
+      return Rendering.view("search").model(model).build();
+    }
+  }
+
   @Timed
   @GetMapping("/search")
   public Mono<Rendering> search(@RequestParam Map<String, String> params) {
     SearchQuery query = parser.buildQuery(params);
 
-    return Mono.fromCallable(
-            () -> {
-              // System.out.println(Thread.currentThread().getName());
-              var results = searcher.search(query);
-
-              var model = new HashMap<String, Object>(baseModel);
-              var startIdx = query.offset() + 1;
-              model.put("page_title", "Search Results");
-              model.put("pagination_start", startIdx);
-              model.put("pagination_end", results.recipes().size() + startIdx);
-              model.put("pagination_max", results.totalHits());
-              // FIXME ;page=Number gets lost after building query
-              // FIXME need original query for the next/prev urls too
-              model.put("pagination_next_href", "");
-              model.put("pagination_prev_href", startIdx == 1 ? null : "/search?");
-
-              var recipes =
-                  results
-                      .recipes()
-                      .stream()
-                      .map(
-                          srr -> {
-                            List<Map<String, Object>> meta = List.of(); // FIXME
-                            return Map.of(
-                                "name",
-                                srr.name(),
-                                "href",
-                                srr.crawlUrl(),
-                                "site",
-                                "nowhere.local", // FIXME
-                                "description",
-                                "", // FIXME
-                                "meta",
-                                meta);
-                          })
-                      .collect(Collectors.toList());
-              model.put("recipes", recipes);
-
-              return Rendering.view("search").model(model).build();
-            })
-        .publishOn(Schedulers.parallel())
+    return Mono.fromCallable(() -> searcher.search(query))
+        .subscribeOn(Schedulers.parallel())
+        .publishOn(Schedulers.elastic())
         .timeout(timeout)
-        .transform(CircuitBreakerOperator.of(breaker));
+        .transform(CircuitBreakerOperator.of(breaker))
+        .map(result -> renderSearch(query, result));
   }
 
   private Rendering renderError(String errorTitle, String errorSubtitle, HttpStatus status) {
