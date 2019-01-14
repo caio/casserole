@@ -44,7 +44,7 @@ public class WebController {
       Map.of(
           "site_title", "gula.recipes",
           "page_description", "",
-          "search_title", "Search 950+k Recipes",
+          "search_title", "Search Over a Million Recipes",
           "search_subtitle", "Find recipes, not ads",
           "search_placeholder", "Ingredients, diets, brands, etc.",
           "search_value", "",
@@ -105,47 +105,48 @@ public class WebController {
         .transform(CircuitBreakerOperator.of(breaker));
   }
 
+  private Rendering renderError(String errorTitle, String errorSubtitle, HttpStatus status) {
+    return Rendering.view("error")
+        .model(baseModel)
+        .modelAttribute("page_title", "An Error Has Occurred")
+        .modelAttribute("error_title", errorTitle)
+        .modelAttribute("error_subtitle", errorSubtitle)
+        .status(status)
+        .build();
+  }
+
+  // FIXME verify exception logging
+
   @ExceptionHandler({
     IllegalStateException.class,
     ServerWebInputException.class,
     SearchParameterException.class
   })
   Rendering handleBadParameters(Exception ex) {
-    // FIXME use a proper error view
-    return Rendering.view("index")
-        .model(baseModel)
-        .modelAttribute("page_title", "Error: bad parameter")
-        .status(HttpStatus.BAD_REQUEST)
-        .build();
+    return renderError("Invalid/Unknown Parameter", ex.getMessage(), HttpStatus.BAD_REQUEST);
   }
 
   @ExceptionHandler
   Rendering handleTimeout(TimeoutException ex) {
-    // FIXME use a proper error view
-    return Rendering.view("index")
-        .model(baseModel)
-        .modelAttribute("page_title", "Timeout")
-        .status(HttpStatus.REQUEST_TIMEOUT)
-        .build();
+    return renderError(
+        "Timeout Error",
+        "We're likely overloaded, please try again in a few minutes",
+        HttpStatus.REQUEST_TIMEOUT);
   }
 
   @ExceptionHandler
   Rendering handleCircuitBreaker(CircuitBreakerOpenException ex) {
-    // FIXME use a proper error view
-    return Rendering.view("index")
-        .model(baseModel)
-        .modelAttribute("page_title", "Circuit Breaker")
-        .status(HttpStatus.SERVICE_UNAVAILABLE)
-        .build();
+    return renderError(
+        "Service Unavailable",
+        "The site is experiencing an abnormal rate of errors, it might be a while before we're back at full speed",
+        HttpStatus.SERVICE_UNAVAILABLE);
   }
 
   @ExceptionHandler
   Rendering handleUnknown(Exception ex) {
-    // FIXME use a proper error view
-    return Rendering.view("index")
-        .model(baseModel)
-        .modelAttribute("page_title", "Unknown Error")
-        .status(HttpStatus.INTERNAL_SERVER_ERROR)
-        .build();
+    return renderError(
+        "Unknown Error",
+        "An unexpected error has occurred and has been logged, please try again",
+        HttpStatus.INTERNAL_SERVER_ERROR);
   }
 }
