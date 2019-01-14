@@ -42,6 +42,11 @@ class WebControllerTest {
     CircuitBreaker getCircuitBreaker() {
       return CircuitBreaker.ofDefaults("test");
     }
+
+    @Bean("searchPageSize")
+    int pageSize() {
+      return 10;
+    }
   }
 
   @BeforeEach

@@ -8,6 +8,8 @@ import java.time.Duration;
 import java.util.List;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Positive;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -22,6 +24,7 @@ public class SearchConfiguration {
 
   @NotNull @NotBlank private String location;
   @NotNull private Duration timeout;
+  @NotNull @Positive private int pageSize;
 
   public void setLocation(String loc) {
     location = loc;
@@ -29,6 +32,16 @@ public class SearchConfiguration {
 
   public void setTimeout(Duration duration) {
     timeout = duration;
+  }
+
+  public void setPageSize(int size) {
+    pageSize = size;
+  }
+
+  @Bean
+  @Qualifier("searchPageSize")
+  int getPageSize() {
+    return pageSize;
   }
 
   @Bean

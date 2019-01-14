@@ -1,7 +1,5 @@
 package co.caio.cerberus.boot;
 
-import static co.caio.cerberus.boot.SearchParameterParser.PAGE_SIZE;
-
 import co.caio.cerberus.boot.SearchParameterParser.SearchParameterException;
 import co.caio.cerberus.model.SearchQuery;
 import co.caio.cerberus.model.SearchResult;
@@ -37,10 +35,13 @@ public class WebController {
   private final CircuitBreaker breaker;
 
   public WebController(
-      Searcher searcher, @Qualifier("searchTimeout") Duration timeout, CircuitBreaker breaker) {
+      Searcher searcher,
+      @Qualifier("searchTimeout") Duration timeout,
+      CircuitBreaker breaker,
+      @Qualifier("searchPageSize") int pageSize) {
     this.searcher = searcher;
     this.timeout = timeout;
-    this.parser = new SearchParameterParser();
+    this.parser = new SearchParameterParser(pageSize);
     this.breaker = breaker;
   }
 

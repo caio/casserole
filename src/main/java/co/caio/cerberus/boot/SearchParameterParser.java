@@ -7,10 +7,14 @@ import java.util.Map;
 import java.util.Scanner;
 
 class SearchParameterParser {
-  static final int PAGE_SIZE = 20;
+  private final int pageSize;
+
+  SearchParameterParser(int pageSize) {
+    this.pageSize = pageSize;
+  }
 
   SearchQuery buildQuery(Map<String, String> params) {
-    var builder = new SearchQuery.Builder().maxResults(PAGE_SIZE);
+    var builder = new SearchQuery.Builder().maxResults(pageSize);
 
     params.forEach(
         (param, value) -> {
@@ -29,7 +33,7 @@ class SearchParameterParser {
               break;
             case "page":
               // page starts from 1, not 0
-              builder.offset((parseUnsignedInt(value) - 1) * PAGE_SIZE);
+              builder.offset((parseUnsignedInt(value) - 1) * pageSize);
               break;
             default:
               throw new SearchParameterException("Unknown parameter " + param);
