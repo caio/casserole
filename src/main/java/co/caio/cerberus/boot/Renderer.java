@@ -56,7 +56,7 @@ class Renderer {
       model.put("pagination_prev_href", currentPage == 1 ? null : "prev_page");
 
       model.put("pagination_start", query.offset() + 1);
-      model.put("pagination_end", result.recipes().size());
+      model.put("pagination_end", result.recipes().size() + query.offset());
       model.put("pagination_max", result.totalHits());
 
       model.put("recipes", renderRecipes(result.recipes()));

@@ -105,4 +105,21 @@ class RendererTest {
     assertNotNull(r.modelAttributes().get("pagination_prev_href"));
     assertNull(r.modelAttributes().get("pagination_next_href"));
   }
+
+  @Test
+  void regressionPaginationEndHasPropperValue() {
+
+    var secondPage = new SearchQuery.Builder().fulltext("unused").offset(pageSize).build();
+    var offsetResultWithNextPage =
+        new SearchResult.Builder()
+            .totalHits(4) // 2 (first page) + 2 (this result)
+            .addRecipe(3, "recipe 3", "doest matter")
+            .addRecipe(4, "recipe 4", "doest matter")
+            .build();
+
+    var r = renderer.renderSearch(secondPage, offsetResultWithNextPage);
+
+    assertEquals("search", r.view());
+    assertEquals(4, r.modelAttributes().get("pagination_end"));
+  }
 }
