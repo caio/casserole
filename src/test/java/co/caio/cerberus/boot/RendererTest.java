@@ -4,13 +4,21 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import co.caio.cerberus.model.SearchQuery;
 import co.caio.cerberus.model.SearchResult;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.util.UriComponentsBuilder;
 
 class RendererTest {
 
   private static final int pageSize = 2; // just to simplify pagination testing
   private static final Renderer renderer = new Renderer(pageSize);
+  private UriComponentsBuilder uriBuilder;
+
+  @BeforeEach
+  void setupUriBuilder() {
+    uriBuilder = UriComponentsBuilder.fromUriString("/renderer");
+  }
 
   @Test
   void renderIndex() {
@@ -31,14 +39,14 @@ class RendererTest {
   void emptyResultsShouldRenderItsOwnView() {
     var unusedQuery = new SearchQuery.Builder().fulltext("unused").build();
     var result = new SearchResult.Builder().build();
-    assertEquals("zero_results", renderer.renderSearch(unusedQuery, result).view());
+    assertEquals("zero_results", renderer.renderSearch(unusedQuery, result, uriBuilder).view());
   }
 
   @Test
   void overPaginationShouldRenderError() {
     var largeOffsetQuery = new SearchQuery.Builder().fulltext("unused").offset(200).build();
     var result = new SearchResult.Builder().totalHits(180).build();
-    assertEquals("error", renderer.renderSearch(largeOffsetQuery, result).view());
+    assertEquals("error", renderer.renderSearch(largeOffsetQuery, result, uriBuilder).view());
   }
 
   @Test
@@ -47,7 +55,7 @@ class RendererTest {
     var result =
         new SearchResult.Builder().totalHits(1).addRecipe(1, "recipe 1", "doest matter").build();
 
-    var r = renderer.renderSearch(unusedQuery, result);
+    var r = renderer.renderSearch(unusedQuery, result, uriBuilder);
 
     assertEquals("search", r.view());
     assertNull(r.modelAttributes().get("pagination_next_href"));
@@ -64,7 +72,7 @@ class RendererTest {
             .addRecipe(2, "recipe 2", "doest matter")
             .build();
 
-    var r = renderer.renderSearch(unusedQuery, resultWithNextPage);
+    var r = renderer.renderSearch(unusedQuery, resultWithNextPage, uriBuilder);
 
     assertEquals("search", r.view());
     assertNull(r.modelAttributes().get("pagination_prev_href"));
@@ -81,7 +89,7 @@ class RendererTest {
             .addRecipe(4, "recipe 4", "doest matter")
             .build();
 
-    var r = renderer.renderSearch(unusedQuery, offsetResultWithNextPage);
+    var r = renderer.renderSearch(unusedQuery, offsetResultWithNextPage, uriBuilder);
 
     assertEquals("search", r.view());
     assertNotNull(r.modelAttributes().get("pagination_prev_href"));
@@ -99,7 +107,7 @@ class RendererTest {
             .addRecipe(4, "recipe 4", "doest matter")
             .build();
 
-    var r = renderer.renderSearch(unusedQuery, offsetResultWithNextPage);
+    var r = renderer.renderSearch(unusedQuery, offsetResultWithNextPage, uriBuilder);
 
     assertEquals("search", r.view());
     assertNotNull(r.modelAttributes().get("pagination_prev_href"));
@@ -107,7 +115,7 @@ class RendererTest {
   }
 
   @Test
-  void regressionPaginationEndHasPropperValue() {
+  void regressionPaginationEndHasProperValue() {
 
     var secondPage = new SearchQuery.Builder().fulltext("unused").offset(pageSize).build();
     var offsetResultWithNextPage =
@@ -117,9 +125,28 @@ class RendererTest {
             .addRecipe(4, "recipe 4", "doest matter")
             .build();
 
-    var r = renderer.renderSearch(secondPage, offsetResultWithNextPage);
+    var r = renderer.renderSearch(secondPage, offsetResultWithNextPage, uriBuilder);
 
     assertEquals("search", r.view());
     assertEquals(4, r.modelAttributes().get("pagination_end"));
+  }
+
+  @Test
+  void paginationUrisAreRenderedCorrectly() {
+    var unusedQuery = new SearchQuery.Builder().fulltext("unused").offset(pageSize).build();
+    var offsetResultWithNextPage =
+        new SearchResult.Builder()
+            .totalHits(5) // 2 (first page) + 2 (this result) + 1 (next page)
+            .addRecipe(3, "recipe 3", "doest matter")
+            .addRecipe(4, "recipe 4", "doest matter")
+            .build();
+
+    var r = renderer.renderSearch(unusedQuery, offsetResultWithNextPage, uriBuilder);
+
+    assertEquals("search", r.view());
+    assertEquals(
+        "/renderer?page=1#results", r.modelAttributes().get("pagination_prev_href").toString());
+    assertEquals(
+        "/renderer?page=3#results", r.modelAttributes().get("pagination_next_href").toString());
   }
 }

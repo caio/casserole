@@ -12,12 +12,14 @@ import java.util.Map;
 import java.util.concurrent.TimeoutException;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.reactive.result.view.Rendering;
 import org.springframework.web.server.ServerWebInputException;
+import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
@@ -49,7 +51,8 @@ public class WebController {
 
   @Timed
   @GetMapping("/search")
-  public Mono<Rendering> search(@RequestParam Map<String, String> params) {
+  public Mono<Rendering> search(
+      @RequestParam Map<String, String> params, ServerHttpRequest request) {
     SearchQuery query = parser.buildQuery(params);
 
     return Mono.fromCallable(() -> searcher.search(query))
@@ -59,7 +62,10 @@ public class WebController {
         .publishOn(Schedulers.elastic())
         .timeout(timeout)
         .transform(CircuitBreakerOperator.of(breaker))
-        .map(result -> renderer.renderSearch(query, result));
+        .map(
+            result ->
+                renderer.renderSearch(
+                    query, result, UriComponentsBuilder.fromHttpRequest(request)));
   }
 
   // FIXME verify exception logging

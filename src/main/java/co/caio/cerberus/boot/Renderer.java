@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.reactive.result.view.Rendering;
+import org.springframework.web.util.UriComponentsBuilder;
 
 class Renderer {
 
@@ -23,7 +24,7 @@ class Renderer {
       Map.of(
           "site_title", "gula.recipes",
           "page_description", "",
-          "search_title", "Search for Recipes",
+          "search_title", "Search Recipes",
           "search_subtitle", "Over a million delicious recipes, zero ads",
           "search_placeholder", "Ingredients, diets, brands, etc.",
           "search_value", "",
@@ -33,7 +34,7 @@ class Renderer {
     return Rendering.view("index").model(baseModel).build();
   }
 
-  Rendering renderSearch(SearchQuery query, SearchResult result) {
+  Rendering renderSearch(SearchQuery query, SearchResult result, UriComponentsBuilder uriBuilder) {
     var model = new HashMap<String, Object>(baseModel);
     model.put("page_title", "Search Results");
     model.put("search_value", query.fulltext().orElse(""));
@@ -51,9 +52,13 @@ class Renderer {
       boolean isLastPage = query.offset() + pageSize >= result.totalHits();
       int currentPage = (query.offset() / pageSize) + 1;
 
-      // FIXME proper pagination hrefs
-      model.put("pagination_next_href", isLastPage ? null : "next_page");
-      model.put("pagination_prev_href", currentPage == 1 ? null : "prev_page");
+      uriBuilder.fragment("results");
+      model.put(
+          "pagination_next_href",
+          isLastPage ? null : uriBuilder.replaceQueryParam("page", currentPage + 1).build());
+      model.put(
+          "pagination_prev_href",
+          currentPage == 1 ? null : uriBuilder.replaceQueryParam("page", currentPage - 1).build());
 
       model.put("pagination_start", query.offset() + 1);
       model.put("pagination_end", result.recipes().size() + query.offset());
