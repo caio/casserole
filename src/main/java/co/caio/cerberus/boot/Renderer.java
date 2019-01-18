@@ -40,7 +40,6 @@ class Renderer {
     model.put("search_value", query.fulltext().orElse(""));
     model.put("search_text", "Search again");
 
-    // FIXME test each result state
     if (result.totalHits() == 0) {
       return Rendering.view("zero_results").model(model).build();
     } else if (query.offset() >= result.totalHits()) {
