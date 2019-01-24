@@ -1,19 +1,26 @@
 package co.caio.cerberus.boot;
 
+import co.caio.cerberus.db.RecipeMetadataDatabase;
 import co.caio.cerberus.search.Searcher;
+import com.samskivert.mustache.Mustache;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.micrometer.CircuitBreakerMetrics;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
+import java.util.OptionalInt;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Positive;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
+import org.springframework.boot.autoconfigure.mustache.MustacheEnvironmentCollector;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 import org.springframework.validation.annotation.Validated;
 
@@ -36,6 +43,31 @@ public class SearchConfiguration {
 
   public void setPageSize(int size) {
     pageSize = size;
+  }
+
+  // FIXME
+  @Bean
+  Mustache.Compiler getMustache(Mustache.TemplateLoader templateLoader, Environment env) {
+    var collector =
+        new MustacheEnvironmentCollector() {
+          @Override
+          public Iterator<?> toIterator(Object value) {
+            if (value instanceof OptionalInt) {
+              return ((OptionalInt) value).isPresent()
+                  ? Collections.singleton(((OptionalInt) value).getAsInt()).iterator()
+                  : Collections.emptyIterator();
+            }
+            return super.toIterator(value);
+          }
+        };
+    collector.setEnvironment(env);
+    return Mustache.compiler().withCollector(collector).withLoader(templateLoader);
+  }
+
+  @Bean
+  @Qualifier("metadataDb")
+  RecipeMetadataDatabase getMetadataDb() {
+    return RecipeMetadataDatabase.Builder.open(Path.of("tmp/lmdb-fancy-test"), 3_000, true);
   }
 
   @Bean

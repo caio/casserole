@@ -1,6 +1,7 @@
 package co.caio.cerberus.boot;
 
 import co.caio.cerberus.boot.SearchParameterParser.SearchParameterException;
+import co.caio.cerberus.db.RecipeMetadataDatabase;
 import co.caio.cerberus.model.SearchQuery;
 import co.caio.cerberus.search.Searcher;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
@@ -10,6 +11,8 @@ import io.micrometer.core.annotation.Timed;
 import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpRequest;
@@ -25,6 +28,7 @@ import reactor.core.scheduler.Schedulers;
 
 @Controller
 public class WebController {
+  private static final Logger logger = LoggerFactory.getLogger(WebController.class);
 
   private final Searcher searcher;
   private final Duration timeout;
@@ -36,12 +40,13 @@ public class WebController {
       Searcher searcher,
       @Qualifier("searchTimeout") Duration timeout,
       CircuitBreaker breaker,
+      RecipeMetadataDatabase db,
       @Qualifier("searchPageSize") int pageSize) {
     this.searcher = searcher;
     this.timeout = timeout;
     this.parser = new SearchParameterParser(pageSize);
     this.breaker = breaker;
-    this.renderer = new Renderer(pageSize);
+    this.renderer = new Renderer(pageSize, db);
   }
 
   @GetMapping("/")
@@ -98,6 +103,7 @@ public class WebController {
 
   @ExceptionHandler
   Rendering handleUnknown(Exception ex) {
+    logger.error("Unknown error", ex);
     return renderer.renderError(
         "Unknown Error",
         "An unexpected error has occurred and has been logged, please try again",

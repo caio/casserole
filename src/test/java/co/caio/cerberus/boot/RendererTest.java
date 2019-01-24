@@ -12,7 +12,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 class RendererTest {
 
   private static final int pageSize = 2; // just to simplify pagination testing
-  private static final Renderer renderer = new Renderer(pageSize);
+  private static final Renderer renderer = new Renderer(pageSize, null); // FIXME null
   private UriComponentsBuilder uriBuilder;
 
   @BeforeEach
