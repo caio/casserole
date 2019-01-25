@@ -1,7 +1,6 @@
 package co.caio.cerberus.boot;
 
 import co.caio.cerberus.boot.SearchParameterParser.SearchParameterException;
-import co.caio.cerberus.db.RecipeMetadataDatabase;
 import co.caio.cerberus.model.SearchQuery;
 import co.caio.cerberus.search.Searcher;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
@@ -40,13 +39,13 @@ public class WebController {
       Searcher searcher,
       @Qualifier("searchTimeout") Duration timeout,
       CircuitBreaker breaker,
-      RecipeMetadataDatabase db,
-      @Qualifier("searchPageSize") int pageSize) {
+      Renderer renderer,
+      SearchParameterParser parameterParser) {
     this.searcher = searcher;
     this.timeout = timeout;
-    this.parser = new SearchParameterParser(pageSize);
+    this.parser = parameterParser;
     this.breaker = breaker;
-    this.renderer = new Renderer(pageSize, db);
+    this.renderer = renderer;
   }
 
   @GetMapping("/")
@@ -103,7 +102,6 @@ public class WebController {
 
   @ExceptionHandler
   Rendering handleUnknown(Exception ex) {
-    logger.error("Unknown error", ex);
     return renderer.renderError(
         "Unknown Error",
         "An unexpected error has occurred and has been logged, please try again",

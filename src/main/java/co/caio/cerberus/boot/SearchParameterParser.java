@@ -5,11 +5,14 @@ import co.caio.cerberus.model.SearchQuery.RangedSpec;
 import co.caio.cerberus.model.SearchQuery.SortOrder;
 import java.util.Map;
 import java.util.Scanner;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
 
+@Component
 class SearchParameterParser {
   private final int pageSize;
 
-  SearchParameterParser(int pageSize) {
+  SearchParameterParser(@Qualifier("searchPageSize") int pageSize) {
     this.pageSize = pageSize;
   }
 
@@ -86,7 +89,7 @@ class SearchParameterParser {
     }
   }
 
-  public class SearchParameterException extends RuntimeException {
+  class SearchParameterException extends RuntimeException {
     SearchParameterException(String message) {
       super(message);
     }

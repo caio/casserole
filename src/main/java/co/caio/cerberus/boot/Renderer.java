@@ -11,16 +11,19 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.result.view.Rendering;
 import org.springframework.web.util.UriComponentsBuilder;
 
+@Component
 class Renderer {
 
   private final int pageSize;
   private final RecipeMetadataDatabase db;
 
   Renderer(
-      @Qualifier("pageSize") int pageSize, @Qualifier("metadataDb") RecipeMetadataDatabase db) {
+      @Qualifier("searchPageSize") int pageSize,
+      @Qualifier("metadataDb") RecipeMetadataDatabase db) {
     this.pageSize = pageSize;
     this.db = db;
   }
@@ -74,6 +77,7 @@ class Renderer {
     }
   }
 
+  // FIXME test this
   private Iterable<RecipeMetadata> renderRecipes(List<SearchResultRecipe> recipes) {
     var recipeIds = recipes.stream().map(SearchResultRecipe::recipeId).collect(Collectors.toList());
     return db.findAllById(recipeIds);

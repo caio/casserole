@@ -3,9 +3,11 @@ package co.caio.cerberus.boot;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 
+import co.caio.cerberus.db.RecipeMetadataDatabase;
 import co.caio.cerberus.model.SearchResult;
 import co.caio.cerberus.search.Searcher;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
+import java.nio.file.Files;
 import java.time.Duration;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,6 +20,7 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.Primary;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
@@ -39,6 +42,7 @@ class WebControllerTest {
     }
 
     @Bean
+    @Primary
     CircuitBreaker getCircuitBreaker() {
       return CircuitBreaker.ofDefaults("test");
     }
@@ -46,6 +50,18 @@ class WebControllerTest {
     @Bean("searchPageSize")
     int pageSize() {
       return 10;
+    }
+
+    @Bean
+    SearchParameterParser parser() {
+      return new SearchParameterParser(pageSize());
+    }
+
+    @Bean
+    Renderer renderer() throws Exception {
+      var tmp = Files.createTempDirectory("renderer");
+      var db = RecipeMetadataDatabase.Builder.open(tmp, 42, false);
+      return new Renderer(pageSize(), db);
     }
   }
 

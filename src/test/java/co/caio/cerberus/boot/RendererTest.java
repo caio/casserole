@@ -2,8 +2,10 @@ package co.caio.cerberus.boot;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import co.caio.cerberus.db.RecipeMetadataDatabase;
 import co.caio.cerberus.model.SearchQuery;
 import co.caio.cerberus.model.SearchResult;
+import java.nio.file.Files;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
@@ -12,8 +14,18 @@ import org.springframework.web.util.UriComponentsBuilder;
 class RendererTest {
 
   private static final int pageSize = 2; // just to simplify pagination testing
-  private static final Renderer renderer = new Renderer(pageSize, null); // FIXME null
+  private static final Renderer renderer;
   private UriComponentsBuilder uriBuilder;
+
+  static {
+    try {
+      var tmp = Files.createTempDirectory("renderer");
+      var db = RecipeMetadataDatabase.Builder.open(tmp, 42, false);
+      renderer = new Renderer(pageSize, db);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
 
   @BeforeEach
   void setupUriBuilder() {

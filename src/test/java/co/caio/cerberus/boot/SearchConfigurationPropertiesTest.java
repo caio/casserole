@@ -2,12 +2,11 @@ package co.caio.cerberus.boot;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import co.caio.cerberus.boot.SearchConfiguration.CircuitBreakerHealthIndicator;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.actuate.health.Status;
 
-class SearchConfigurationTest {
+class SearchConfigurationPropertiesTest {
 
   @Test
   void circuitBreakerHealthEndpoint() {
