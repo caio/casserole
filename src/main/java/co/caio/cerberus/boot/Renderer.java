@@ -77,7 +77,6 @@ class Renderer {
     }
   }
 
-  // FIXME test this
   private Iterable<RecipeMetadata> renderRecipes(List<SearchResultRecipe> recipes) {
     var recipeIds = recipes.stream().map(SearchResultRecipe::recipeId).collect(Collectors.toList());
     return db.findAllById(recipeIds);
