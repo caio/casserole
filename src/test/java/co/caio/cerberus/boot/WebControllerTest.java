@@ -63,6 +63,11 @@ class WebControllerTest {
       var db = RecipeMetadataDatabase.Builder.open(tmp, 42, false);
       return new Renderer(pageSize(), db);
     }
+
+    @Bean("metadataDb")
+    RecipeMetadataDatabase getMetadataDb() throws Exception {
+      return RecipeMetadataDatabase.Builder.open(Files.createTempDirectory("lmdb"), 3_000, false);
+    }
   }
 
   @BeforeEach

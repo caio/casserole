@@ -15,12 +15,31 @@ public class SearchConfigurationProperties {
   @NotNull private Duration timeout;
   @NotNull @Positive private int pageSize;
 
+  @NotNull @Positive private int lmdbMaxSize;
+  @NotNull @NotBlank private String lmdbLocation;
+
+  public int getLmdbMaxSize() {
+    return lmdbMaxSize;
+  }
+
+  public void setLmdbMaxSize(int maxMb) {
+    this.lmdbMaxSize = maxMb;
+  }
+
   public String getLocation() {
     return location;
   }
 
   public void setLocation(String loc) {
     location = loc;
+  }
+
+  public String getLmdbLocation() {
+    return lmdbLocation;
+  }
+
+  public void setLmdbLocation(String loc) {
+    lmdbLocation = loc;
   }
 
   public Duration getTimeout() {

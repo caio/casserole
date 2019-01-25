@@ -102,6 +102,7 @@ public class WebController {
 
   @ExceptionHandler
   Rendering handleUnknown(Exception ex) {
+    logger.error("Handled unknown error", ex);
     return renderer.renderError(
         "Unknown Error",
         "An unexpected error has occurred and has been logged, please try again",

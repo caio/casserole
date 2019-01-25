@@ -51,7 +51,8 @@ public class BootApplication {
 
   @Bean("metadataDb")
   RecipeMetadataDatabase getMetadataDb() {
-    return RecipeMetadataDatabase.Builder.open(Path.of("tmp/lmdb-fancy-test"), 3_000, true);
+    return RecipeMetadataDatabase.Builder.open(
+        Path.of(searchConfiguration.getLmdbLocation()), searchConfiguration.getLmdbMaxSize(), true);
   }
 
   @Bean("searchPageSize")
