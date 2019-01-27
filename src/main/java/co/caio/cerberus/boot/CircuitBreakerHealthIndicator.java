@@ -29,14 +29,14 @@ class CircuitBreakerHealthIndicator implements HealthIndicator {
     var config = breaker.getCircuitBreakerConfig();
     var metrics = breaker.getMetrics();
 
-    builder.withDetail("failureRate", metrics.getFailureRate());
-    builder.withDetail("failureRateThreshold", config.getFailureRateThreshold());
-    builder.withDetail("maxBufferedCalls", metrics.getMaxNumberOfBufferedCalls());
-    builder.withDetail("bufferedCalls", metrics.getNumberOfBufferedCalls());
-    builder.withDetail("failedCalls", metrics.getNumberOfFailedCalls());
-    builder.withDetail("notPermittedCalls", metrics.getNumberOfNotPermittedCalls());
-    builder.withDetail("openStateDurationSeconds", config.getWaitDurationInOpenState().toSeconds());
-
-    return builder.build();
+    return builder
+        .withDetail("failureRate", metrics.getFailureRate())
+        .withDetail("failureRateThreshold", config.getFailureRateThreshold())
+        .withDetail("maxBufferedCalls", metrics.getMaxNumberOfBufferedCalls())
+        .withDetail("bufferedCalls", metrics.getNumberOfBufferedCalls())
+        .withDetail("failedCalls", metrics.getNumberOfFailedCalls())
+        .withDetail("notPermittedCalls", metrics.getNumberOfNotPermittedCalls())
+        .withDetail("openStateDurationSeconds", config.getWaitDurationInOpenState().toSeconds())
+        .build();
   }
 }

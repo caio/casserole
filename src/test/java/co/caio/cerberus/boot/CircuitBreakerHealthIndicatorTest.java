@@ -29,5 +29,4 @@ class CircuitBreakerHealthIndicatorTest {
     breaker.transitionToClosedState();
     assertEquals(Status.UP, indicator.health().getStatus());
   }
-
 }
