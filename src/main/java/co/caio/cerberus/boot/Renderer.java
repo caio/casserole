@@ -44,6 +44,7 @@ class Renderer {
 
   Rendering renderSearch(SearchQuery query, SearchResult result, UriComponentsBuilder uriBuilder) {
     var model = new HashMap<String, Object>(baseModel);
+    model.put("search_no_focus", true);
     model.put("page_title", "Search Results");
     model.put("search_value", query.fulltext().orElse(""));
     model.put("search_text", "Search again");
