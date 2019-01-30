@@ -1,5 +1,7 @@
 package co.caio.cerberus.boot;
 
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
@@ -12,6 +14,8 @@ import java.nio.file.Files;
 import java.time.Duration;
 import java.util.List;
 import java.util.function.Consumer;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.stubbing.Answer;
@@ -26,7 +30,9 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.EntityExchangeResult;
+import org.springframework.test.web.reactive.server.ExchangeResult;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import org.springframework.test.web.reactive.server.WebTestClient.BodyContentSpec;
 
 @WebFluxTest(WebController.class)
 @Import(MustacheAutoConfiguration.class)
@@ -134,32 +140,41 @@ class WebControllerTest {
 
   @Test
   void indexPageRendersNormally() {
-    // XXX verify with something that actually parses the html maybe?
-    consumeIndex(eer -> {
-      var body = eer.getResponseBody();
-      assertTrue(! body.contains("notification is-warning"));
-    });
+    var doc = parseIndexBody();
+
+    // There are no warning messages
+    assertNull(doc.select("div.hero-body div[class*='notification is-warning']").first());
+    // And the search controls are NOT disabled
+    assertNull(doc.select("form input[disabled]").first());
+    assertNull(doc.select("form button[disabled]").first());
   }
 
   @Test
   void indexPageRendersWarningWhenCircuitBreakerIsOpen() {
-    // XXX verify with something that actually parses the html maybe?
     breaker.transitionToOpenState();
-    consumeIndex(eer -> {
-      var body = eer.getResponseBody();
-      assertTrue(body.contains("notification is-warning"));
-    });
+
+    var doc = parseIndexBody();
+
+    // The warning is displayed
+    assertNotNull(doc.select("div.hero-body div[class*='notification is-warning']").first());
+    // And the search controls are disabled
+    assertNotNull(doc.select("form input[disabled]").first());
+    assertNotNull(doc.select("form button[disabled]").first());
   }
 
-  private void consumeIndex(Consumer<EntityExchangeResult<String>> consumer) {
-    testClient
-        .get()
-        .uri("/")
-        .exchange()
-        .expectStatus()
-        .is2xxSuccessful()
-        .expectBody(String.class)
-        .consumeWith(consumer);
+  private Document parseIndexBody() {
+    var body =
+        testClient
+            .get()
+            .uri("/")
+            .exchange()
+            .expectStatus()
+            .is2xxSuccessful()
+            .expectBody(String.class)
+            .returnResult()
+            .getResponseBody();
+    assertNotNull(body);
+    return Jsoup.parse(body);
   }
 
   void assertGet(String uri, HttpStatus status) {
