@@ -2,7 +2,6 @@ package co.caio.cerberus.boot;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 
@@ -13,7 +12,6 @@ import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import java.nio.file.Files;
 import java.time.Duration;
 import java.util.List;
-import java.util.function.Consumer;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,10 +27,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.test.web.reactive.server.EntityExchangeResult;
-import org.springframework.test.web.reactive.server.ExchangeResult;
 import org.springframework.test.web.reactive.server.WebTestClient;
-import org.springframework.test.web.reactive.server.WebTestClient.BodyContentSpec;
 
 @WebFluxTest(WebController.class)
 @Import(MustacheAutoConfiguration.class)
@@ -76,6 +71,11 @@ class WebControllerTest {
     @Bean("metadataDb")
     RecipeMetadataDatabase getMetadataDb() throws Exception {
       return RecipeMetadataDatabase.Builder.open(Files.createTempDirectory("lmdb"), 3_000, false);
+    }
+
+    @Bean
+    SearchConfigurationProperties conf() {
+      return new SearchConfigurationProperties();
     }
   }
 

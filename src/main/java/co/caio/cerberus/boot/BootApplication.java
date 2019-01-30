@@ -6,7 +6,7 @@ import com.samskivert.mustache.DefaultCollector;
 import com.samskivert.mustache.Mustache;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.micrometer.CircuitBreakerMetrics;
-import java.nio.file.Path;
+import java.io.IOException;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.Iterator;
@@ -18,7 +18,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 
 @SpringBootApplication
-@EnableConfigurationProperties(SearchConfigurationProperties.class)
+@EnableConfigurationProperties
 public class BootApplication {
 
   private final SearchConfigurationProperties searchConfiguration;
@@ -50,24 +50,23 @@ public class BootApplication {
   }
 
   @Bean("metadataDb")
-  RecipeMetadataDatabase getMetadataDb() {
-    return RecipeMetadataDatabase.Builder.open(
-        Path.of(searchConfiguration.getLmdbLocation()), searchConfiguration.getLmdbMaxSize(), true);
+  RecipeMetadataDatabase getMetadataDb() throws IOException {
+    return RecipeMetadataDatabase.Builder.open(searchConfiguration.chronicle.filename);
   }
 
   @Bean("searchPageSize")
   int pageSize() {
-    return searchConfiguration.getPageSize();
+    return searchConfiguration.pageSize;
   }
 
   @Bean
   Searcher getSearcher() {
-    return new Searcher.Builder().dataDirectory(Path.of(searchConfiguration.getLocation())).build();
+    return new Searcher.Builder().dataDirectory(searchConfiguration.lucene.directory).build();
   }
 
   @Bean("searchTimeout")
   Duration timeout() {
-    return searchConfiguration.getTimeout();
+    return searchConfiguration.timeout;
   }
 
   @Bean("searchCircuitBreaker")

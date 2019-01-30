@@ -46,7 +46,7 @@ class ModelView {
     return Rendering.view("index")
         .model(baseModel)
         .modelAttribute("search_is_disabled", true)
-        .modelAttribute("show_unstable_warning",true)
+        .modelAttribute("show_unstable_warning", true)
         .build();
   }
 
