@@ -50,7 +50,11 @@ public class WebController {
 
   @GetMapping("/")
   public Rendering index() {
-    return modelView.renderIndex();
+    if (breaker.isCallPermitted()) {
+      return modelView.renderIndex();
+    } else {
+      return modelView.renderUnstableIndex();
+    }
   }
 
   @Timed

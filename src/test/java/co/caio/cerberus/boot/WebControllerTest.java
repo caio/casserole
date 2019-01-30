@@ -1,5 +1,6 @@
 package co.caio.cerberus.boot;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 
@@ -10,6 +11,7 @@ import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import java.nio.file.Files;
 import java.time.Duration;
 import java.util.List;
+import java.util.function.Consumer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.stubbing.Answer;
@@ -23,6 +25,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.test.web.reactive.server.EntityExchangeResult;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
 @WebFluxTest(WebController.class)
@@ -127,6 +130,36 @@ class WebControllerTest {
                   return new SearchResult.Builder().build();
                 });
     assertGet("/search?q=salt", HttpStatus.REQUEST_TIMEOUT);
+  }
+
+  @Test
+  void indexPageRendersNormally() {
+    // XXX verify with something that actually parses the html maybe?
+    consumeIndex(eer -> {
+      var body = eer.getResponseBody();
+      assertTrue(! body.contains("notification is-warning"));
+    });
+  }
+
+  @Test
+  void indexPageRendersWarningWhenCircuitBreakerIsOpen() {
+    // XXX verify with something that actually parses the html maybe?
+    breaker.transitionToOpenState();
+    consumeIndex(eer -> {
+      var body = eer.getResponseBody();
+      assertTrue(body.contains("notification is-warning"));
+    });
+  }
+
+  private void consumeIndex(Consumer<EntityExchangeResult<String>> consumer) {
+    testClient
+        .get()
+        .uri("/")
+        .exchange()
+        .expectStatus()
+        .is2xxSuccessful()
+        .expectBody(String.class)
+        .consumeWith(consumer);
   }
 
   void assertGet(String uri, HttpStatus status) {

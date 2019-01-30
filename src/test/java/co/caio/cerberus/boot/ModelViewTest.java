@@ -35,7 +35,19 @@ class ModelViewTest {
   @Test
   void renderIndex() {
     var index = modelView.renderIndex();
+    var attrs = index.modelAttributes();
     assertEquals("index", index.view());
+    assertNull(attrs.get("search_is_disabled"));
+    assertNull(attrs.get("show_unstable_warning"));
+  }
+
+  @Test
+  void renderUnstableIndex() {
+    var index = modelView.renderUnstableIndex();
+    var attrs = index.modelAttributes();
+    assertEquals("index", index.view());
+    assertTrue((Boolean) attrs.get("search_is_disabled"));
+    assertTrue((Boolean) attrs.get("show_unstable_warning"));
   }
 
   @Test

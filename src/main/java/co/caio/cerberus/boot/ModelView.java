@@ -42,6 +42,14 @@ class ModelView {
     return Rendering.view("index").model(baseModel).build();
   }
 
+  Rendering renderUnstableIndex() {
+    return Rendering.view("index")
+        .model(baseModel)
+        .modelAttribute("search_is_disabled", true)
+        .modelAttribute("show_unstable_warning",true)
+        .build();
+  }
+
   Rendering renderSearch(SearchQuery query, SearchResult result, UriComponentsBuilder uriBuilder) {
     var model = new HashMap<String, Object>(baseModel);
     model.put("search_no_focus", true);
