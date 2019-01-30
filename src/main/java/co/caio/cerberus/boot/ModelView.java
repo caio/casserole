@@ -16,12 +16,12 @@ import org.springframework.web.reactive.result.view.Rendering;
 import org.springframework.web.util.UriComponentsBuilder;
 
 @Component
-class Renderer {
+class ModelView {
 
   private final int pageSize;
   private final RecipeMetadataDatabase db;
 
-  Renderer(
+  ModelView(
       @Qualifier("searchPageSize") int pageSize,
       @Qualifier("metadataDb") RecipeMetadataDatabase db) {
     this.pageSize = pageSize;

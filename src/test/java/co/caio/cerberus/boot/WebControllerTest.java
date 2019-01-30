@@ -58,10 +58,10 @@ class WebControllerTest {
     }
 
     @Bean
-    Renderer renderer() throws Exception {
+    ModelView modelView() throws Exception {
       var tmp = Files.createTempDirectory("renderer");
       var db = RecipeMetadataDatabase.Builder.open(tmp, 42, false);
-      return new Renderer(pageSize(), db);
+      return new ModelView(pageSize(), db);
     }
 
     @Bean("metadataDb")
