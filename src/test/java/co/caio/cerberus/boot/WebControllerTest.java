@@ -5,11 +5,11 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 
+import co.caio.cerberus.db.HashMapRecipeMetadataDatabase;
 import co.caio.cerberus.db.RecipeMetadataDatabase;
 import co.caio.cerberus.model.SearchResult;
 import co.caio.cerberus.search.Searcher;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
-import java.nio.file.Files;
 import java.time.Duration;
 import java.util.List;
 import org.jsoup.Jsoup;
@@ -18,6 +18,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.stubbing.Answer;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.mustache.MustacheAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -62,15 +63,13 @@ class WebControllerTest {
     }
 
     @Bean
-    ModelView modelView() throws Exception {
-      var tmp = Files.createTempDirectory("renderer");
-      var db = RecipeMetadataDatabase.Builder.open(tmp, 42, false);
+    ModelView modelView(@Qualifier("metadataDb") RecipeMetadataDatabase db) {
       return new ModelView(pageSize(), db);
     }
 
     @Bean("metadataDb")
-    RecipeMetadataDatabase getMetadataDb() throws Exception {
-      return RecipeMetadataDatabase.Builder.open(Files.createTempDirectory("lmdb"), 3_000, false);
+    RecipeMetadataDatabase getMetadataDb() {
+      return new HashMapRecipeMetadataDatabase();
     }
 
     @Bean

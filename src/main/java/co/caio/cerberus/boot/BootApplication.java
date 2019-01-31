@@ -1,12 +1,12 @@
 package co.caio.cerberus.boot;
 
+import co.caio.cerberus.db.ChronicleRecipeMetadataDatabase;
 import co.caio.cerberus.db.RecipeMetadataDatabase;
 import co.caio.cerberus.search.Searcher;
 import com.samskivert.mustache.DefaultCollector;
 import com.samskivert.mustache.Mustache;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.micrometer.CircuitBreakerMetrics;
-import java.io.IOException;
 import java.time.Duration;
 import java.util.Collections;
 import java.util.Iterator;
@@ -50,8 +50,8 @@ public class BootApplication {
   }
 
   @Bean("metadataDb")
-  RecipeMetadataDatabase getMetadataDb() throws IOException {
-    return RecipeMetadataDatabase.Builder.open(searchConfiguration.chronicle.filename);
+  RecipeMetadataDatabase getMetadataDb() {
+    return ChronicleRecipeMetadataDatabase.open(searchConfiguration.chronicle.filename);
   }
 
   @Bean("searchPageSize")

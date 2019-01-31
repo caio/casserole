@@ -3,10 +3,10 @@ package co.caio.cerberus.boot;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import co.caio.cerberus.Util;
+import co.caio.cerberus.db.HashMapRecipeMetadataDatabase;
 import co.caio.cerberus.db.RecipeMetadataDatabase;
 import co.caio.cerberus.search.Searcher;
 import com.samskivert.mustache.Mustache;
-import java.nio.file.Files;
 import java.util.Map;
 import java.util.OptionalInt;
 import org.junit.jupiter.api.Test;
@@ -28,8 +28,8 @@ class BootApplicationTests {
     }
 
     @Bean("metadataDb")
-    RecipeMetadataDatabase getMetadataDb() throws Exception {
-      return RecipeMetadataDatabase.Builder.open(Files.createTempDirectory("lmdb"), 3_000, false);
+    RecipeMetadataDatabase getMetadataDb() {
+      return new HashMapRecipeMetadataDatabase();
     }
   }
 

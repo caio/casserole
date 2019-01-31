@@ -28,7 +28,7 @@ class ModelView {
     this.db = db;
   }
 
-  private Map<String, String> baseModel =
+  private final Map<String, String> baseModel =
       Map.of(
           "site_title", "gula.recipes",
           "page_description", "",
