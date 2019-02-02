@@ -16,7 +16,6 @@ import co.caio.tablier.view.Index;
 import co.caio.tablier.view.Search;
 import co.caio.tablier.view.ZeroResults;
 import com.fizzed.rocker.RockerModel;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.OptionalInt;
 import java.util.stream.Collectors;
@@ -103,14 +102,10 @@ class ModelView {
 
   private Iterable<RecipeInfo> renderRecipes(List<SearchResultRecipe> recipes) {
     var recipeIds = recipes.stream().map(SearchResultRecipe::recipeId).collect(Collectors.toList());
-
-    var result = new ArrayList<RecipeInfo>(recipeIds.size());
-
-    for (var rm : db.findAllById(recipeIds)) {
-      result.add(new RecipeMetadataRecipeInfoAdapter(rm));
-    }
-
-    return result;
+    return db.findAllById(recipeIds)
+        .stream()
+        .map(RecipeMetadataRecipeInfoAdapter::new)
+        .collect(Collectors.toList());
   }
 
   RockerModel renderError(String errorTitle, String errorSubtitle) {

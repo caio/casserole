@@ -1,6 +1,5 @@
 package co.caio.cerberus.boot;
 
-
 import co.caio.cerberus.Util;
 import co.caio.cerberus.db.HashMapRecipeMetadataDatabase;
 import co.caio.cerberus.db.RecipeMetadataDatabase;
