@@ -1,6 +1,7 @@
 package co.caio.cerberus.boot;
 
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.codec.ServerCodecConfigurer;
 import org.springframework.web.reactive.config.ResourceHandlerRegistry;
 import org.springframework.web.reactive.config.WebFluxConfigurer;
 import org.springframework.web.reactive.resource.EncodedResourceResolver;
@@ -17,5 +18,10 @@ public class ResourceConfiguration implements WebFluxConfigurer {
         .resourceChain(true)
         .addResolver(new EncodedResourceResolver())
         .addResolver(new PathResourceResolver());
+  }
+
+  @Override
+  public void configureHttpMessageCodecs(ServerCodecConfigurer configurer) {
+    configurer.customCodecs().writer(new RockerModelHttpMessageWriter());
   }
 }
