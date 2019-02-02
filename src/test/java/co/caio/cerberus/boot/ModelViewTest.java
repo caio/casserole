@@ -2,12 +2,16 @@ package co.caio.cerberus.boot;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import co.caio.cerberus.boot.ModelView.OverPaginationError;
 import co.caio.cerberus.db.HashMapRecipeMetadataDatabase;
 import co.caio.cerberus.model.SearchQuery;
 import co.caio.cerberus.model.SearchResult;
+import com.fizzed.rocker.RockerModel;
+import com.fizzed.rocker.runtime.StringBuilderOutput;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.util.UriComponentsBuilder;
 
 class ModelViewTest {
@@ -17,6 +21,11 @@ class ModelViewTest {
       new ModelView(pageSize, new HashMapRecipeMetadataDatabase());
   private UriComponentsBuilder uriBuilder;
 
+  private Document parseOutput(RockerModel rockerModel) {
+    var rendered = rockerModel.render(StringBuilderOutput.FACTORY).toString();
+    return Jsoup.parse(rendered);
+  }
+
   @BeforeEach
   void setupUriBuilder() {
     uriBuilder = UriComponentsBuilder.fromUriString("/renderer");
@@ -24,43 +33,49 @@ class ModelViewTest {
 
   @Test
   void renderIndex() {
-    var index = modelView.renderIndex();
-    var attrs = index.modelAttributes();
-    assertEquals("index", index.view());
-    assertNull(attrs.get("search_is_disabled"));
-    assertNull(attrs.get("show_unstable_warning"));
+    var doc = parseOutput(modelView.renderIndex());
+    assertTrue(doc.title().startsWith(ModelView.INDEX_PAGE_TITLE));
   }
 
   @Test
   void renderUnstableIndex() {
-    var index = modelView.renderUnstableIndex();
-    var attrs = index.modelAttributes();
-    assertEquals("index", index.view());
-    assertTrue((Boolean) attrs.get("search_is_disabled"));
-    assertTrue((Boolean) attrs.get("show_unstable_warning"));
+    var doc = parseOutput(modelView.renderUnstableIndex());
+    assertTrue(doc.title().startsWith(ModelView.INDEX_PAGE_TITLE));
+
+    // The warning is displayed
+    assertNotNull(doc.selectFirst("div.hero-body div[class*='notification is-warning']"));
   }
 
   @Test
   void renderError() {
-    var error = modelView.renderError("title", "subtitle", HttpStatus.UNPROCESSABLE_ENTITY);
-    assertEquals("error", error.view());
-    assertEquals(HttpStatus.UNPROCESSABLE_ENTITY, error.status());
-    assertEquals("title", error.modelAttributes().get("error_title"));
-    assertEquals("subtitle", error.modelAttributes().get("error_subtitle"));
+    var errorTitle = "Test Error Title";
+    var errorSubtitle = "Error Subtitle";
+    var doc = parseOutput(modelView.renderError(errorTitle, errorSubtitle));
+
+    assertTrue(doc.title().startsWith(ModelView.ERROR_PAGE_TITLE));
+    assertEquals(errorTitle, doc.selectFirst("section#error.section h1.title").text());
+    assertEquals(errorSubtitle, doc.selectFirst("section#error.section h2.subtitle").text());
   }
 
   @Test
-  void emptyResultsShouldRenderItsOwnView() {
+  void emptyResultsSearchPage() {
     var unusedQuery = new SearchQuery.Builder().fulltext("unused").build();
     var result = new SearchResult.Builder().build();
-    assertEquals("zero_results", modelView.renderSearch(unusedQuery, result, uriBuilder).view());
+
+    var doc = parseOutput(modelView.renderSearch(unusedQuery, result, uriBuilder));
+    assertTrue(doc.title().startsWith(ModelView.SEARCH_PAGE_TITLE));
+    assertEquals(
+        "Couldn't find any recipe matching your search :(",
+        doc.selectFirst("section#results h2.subtitle").text());
   }
 
   @Test
   void overPaginationShouldRenderError() {
     var largeOffsetQuery = new SearchQuery.Builder().fulltext("unused").offset(200).build();
     var result = new SearchResult.Builder().totalHits(180).build();
-    assertEquals("error", modelView.renderSearch(largeOffsetQuery, result, uriBuilder).view());
+    assertThrows(
+        OverPaginationError.class,
+        () -> modelView.renderSearch(largeOffsetQuery, result, uriBuilder));
   }
 
   @Test
@@ -69,11 +84,12 @@ class ModelViewTest {
     var result =
         new SearchResult.Builder().totalHits(1).addRecipe(1, "recipe 1", "doest matter").build();
 
-    var r = modelView.renderSearch(unusedQuery, result, uriBuilder);
+    var doc = parseOutput(modelView.renderSearch(unusedQuery, result, uriBuilder));
 
-    assertEquals("search", r.view());
-    assertNull(r.modelAttributes().get("pagination_next_href"));
-    assertNull(r.modelAttributes().get("pagination_prev_href"));
+    assertTrue(doc.title().startsWith(ModelView.SEARCH_PAGE_TITLE));
+
+    assertNotNull(doc.selectFirst("nav.pagination a.pagination-previous[disabled]"));
+    assertNotNull(doc.selectFirst("nav.pagination a.pagination-next[disabled]"));
   }
 
   @Test
@@ -86,11 +102,12 @@ class ModelViewTest {
             .addRecipe(2, "recipe 2", "doest matter")
             .build();
 
-    var r = modelView.renderSearch(unusedQuery, resultWithNextPage, uriBuilder);
+    var doc = parseOutput(modelView.renderSearch(unusedQuery, resultWithNextPage, uriBuilder));
 
-    assertEquals("search", r.view());
-    assertNull(r.modelAttributes().get("pagination_prev_href"));
-    assertNotNull(r.modelAttributes().get("pagination_next_href"));
+    assertTrue(doc.title().startsWith(ModelView.SEARCH_PAGE_TITLE));
+
+    assertNotNull(doc.selectFirst("nav.pagination a.pagination-previous[disabled]"));
+    assertNotNull(doc.selectFirst("nav.pagination a.pagination-next[href$='page=2#results']"));
   }
 
   @Test
@@ -103,11 +120,13 @@ class ModelViewTest {
             .addRecipe(4, "recipe 4", "doest matter")
             .build();
 
-    var r = modelView.renderSearch(unusedQuery, offsetResultWithNextPage, uriBuilder);
+    var doc =
+        parseOutput(modelView.renderSearch(unusedQuery, offsetResultWithNextPage, uriBuilder));
 
-    assertEquals("search", r.view());
-    assertNotNull(r.modelAttributes().get("pagination_prev_href"));
-    assertNotNull(r.modelAttributes().get("pagination_next_href"));
+    assertTrue(doc.title().startsWith(ModelView.SEARCH_PAGE_TITLE));
+
+    assertNotNull(doc.selectFirst("nav.pagination a.pagination-previous[href$='page=1#results']"));
+    assertNotNull(doc.selectFirst("nav.pagination a.pagination-next[href$='page=3#results']"));
   }
 
   @Test
@@ -121,11 +140,13 @@ class ModelViewTest {
             .addRecipe(4, "recipe 4", "doest matter")
             .build();
 
-    var r = modelView.renderSearch(unusedQuery, offsetResultWithNextPage, uriBuilder);
+    var doc =
+        parseOutput(modelView.renderSearch(unusedQuery, offsetResultWithNextPage, uriBuilder));
 
-    assertEquals("search", r.view());
-    assertNotNull(r.modelAttributes().get("pagination_prev_href"));
-    assertNull(r.modelAttributes().get("pagination_next_href"));
+    assertTrue(doc.title().startsWith(ModelView.SEARCH_PAGE_TITLE));
+
+    assertNotNull(doc.selectFirst("nav.pagination a.pagination-previous[href$='page=1#results']"));
+    assertNotNull(doc.selectFirst("nav.pagination a.pagination-next[disabled]"));
   }
 
   @Test
@@ -139,28 +160,11 @@ class ModelViewTest {
             .addRecipe(4, "recipe 4", "doest matter")
             .build();
 
-    var r = modelView.renderSearch(secondPage, offsetResultWithNextPage, uriBuilder);
+    var doc = parseOutput(modelView.renderSearch(secondPage, offsetResultWithNextPage, uriBuilder));
 
-    assertEquals("search", r.view());
-    assertEquals(4, r.modelAttributes().get("pagination_end"));
-  }
+    assertTrue(doc.title().startsWith(ModelView.SEARCH_PAGE_TITLE));
 
-  @Test
-  void paginationUrisAreRenderedCorrectly() {
-    var unusedQuery = new SearchQuery.Builder().fulltext("unused").offset(pageSize).build();
-    var offsetResultWithNextPage =
-        new SearchResult.Builder()
-            .totalHits(5) // 2 (first page) + 2 (this result) + 1 (next page)
-            .addRecipe(3, "recipe 3", "doest matter")
-            .addRecipe(4, "recipe 4", "doest matter")
-            .build();
-
-    var r = modelView.renderSearch(unusedQuery, offsetResultWithNextPage, uriBuilder);
-
-    assertEquals("search", r.view());
-    assertEquals(
-        "/renderer?page=1#results", r.modelAttributes().get("pagination_prev_href").toString());
-    assertEquals(
-        "/renderer?page=3#results", r.modelAttributes().get("pagination_next_href").toString());
+    var subtitle = doc.selectFirst("section#results h2.subtitle").text();
+    assertEquals("Showing recipes 3 to 4 (Out of 4)", subtitle);
   }
 }

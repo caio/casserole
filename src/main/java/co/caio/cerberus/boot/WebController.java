@@ -1,8 +1,10 @@
 package co.caio.cerberus.boot;
 
+import co.caio.cerberus.boot.ModelView.OverPaginationError;
 import co.caio.cerberus.boot.SearchParameterParser.SearchParameterException;
 import co.caio.cerberus.model.SearchQuery;
 import co.caio.cerberus.search.Searcher;
+import com.fizzed.rocker.RockerModel;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerOpenException;
 import io.github.resilience4j.reactor.circuitbreaker.operator.CircuitBreakerOperator;
@@ -19,7 +21,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.reactive.result.view.Rendering;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.server.ServerWebInputException;
 import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Mono;
@@ -49,7 +52,8 @@ public class WebController {
   }
 
   @GetMapping("/")
-  public Rendering index() {
+  @ResponseBody
+  public RockerModel index() {
     if (breaker.isCallPermitted()) {
       return modelView.renderIndex();
     } else {
@@ -59,7 +63,8 @@ public class WebController {
 
   @Timed
   @GetMapping("/search")
-  public Mono<Rendering> search(
+  @ResponseBody
+  public Mono<RockerModel> search(
       @RequestParam Map<String, String> params, ServerHttpRequest request) {
     SearchQuery query = parser.buildQuery(params);
 
@@ -83,33 +88,43 @@ public class WebController {
     ServerWebInputException.class,
     SearchParameterException.class
   })
-  Rendering handleBadParameters(Exception ex) {
-    return modelView.renderError(
-        "Invalid/Unknown Parameter", ex.getMessage(), HttpStatus.BAD_REQUEST);
+  @ResponseStatus(HttpStatus.BAD_REQUEST)
+  @ResponseBody
+  RockerModel handleBadParameters(Exception ex) {
+    logger.error("Handled bad parameter", ex);
+    return modelView.renderError("Invalid/Unknown Parameter", ex.getMessage());
   }
 
   @ExceptionHandler
-  Rendering handleTimeout(TimeoutException ex) {
-    return modelView.renderError(
-        "Timeout Error",
-        "We're likely overloaded, please try again in a few minutes",
-        HttpStatus.REQUEST_TIMEOUT);
+  @ResponseStatus(HttpStatus.BAD_REQUEST)
+  @ResponseBody
+  RockerModel handleOverPagination(OverPaginationError ex) {
+    return modelView.renderError("Invalid Page Number", ex.getMessage());
   }
 
   @ExceptionHandler
-  Rendering handleCircuitBreaker(CircuitBreakerOpenException ex) {
+  @ResponseStatus(HttpStatus.REQUEST_TIMEOUT)
+  @ResponseBody
+  RockerModel handleTimeout(TimeoutException ex) {
+    return modelView.renderError(
+        "Timeout Error", "We're likely overloaded, please try again in a few minutes");
+  }
+
+  @ExceptionHandler
+  @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
+  @ResponseBody
+  RockerModel handleCircuitBreaker(CircuitBreakerOpenException ex) {
     return modelView.renderError(
         "Service Unavailable",
-        "The site is experiencing an abnormal rate of errors, it might be a while before we're back at full speed",
-        HttpStatus.SERVICE_UNAVAILABLE);
+        "The site is experiencing an abnormal rate of errors, it might be a while before we're back at full speed");
   }
 
   @ExceptionHandler
-  Rendering handleUnknown(Exception ex) {
+  @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+  @ResponseBody
+  RockerModel handleUnknown(Exception ex) {
     logger.error("Handled unknown error", ex);
     return modelView.renderError(
-        "Unknown Error",
-        "An unexpected error has occurred and has been logged, please try again",
-        HttpStatus.INTERNAL_SERVER_ERROR);
+        "Unknown Error", "An unexpected error has occurred and has been logged, please try again");
   }
 }
