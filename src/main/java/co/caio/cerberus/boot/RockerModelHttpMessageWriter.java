@@ -41,6 +41,7 @@ public class RockerModelHttpMessageWriter implements HttpMessageWriter<RockerMod
         .flatMap(
             rockerModel -> {
               var allBytes = rockerModel.render(ArrayOfByteArraysOutput.FACTORY).getArrays();
+              message.getHeaders().setContentType(MediaType.TEXT_HTML);
               return message.writeWith(Flux.fromIterable(allBytes).map(bufferFactory::wrap));
             });
   }
