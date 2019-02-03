@@ -105,11 +105,11 @@ class WebControllerTest {
 
   @Test
   void circuitOpensAfterManyErrors() {
-    given(searcher.search(any())).willThrow(RuntimeException.class);
+    given(searcher.search(any())).willThrow(IllegalStateException.class);
     // error rate of 100%, but the default ring buffer is of 100 so
     // the circuit should only open after the 100th request
     for (int i = 0; i < 100; i++) {
-      assertGet("/search?q=bacon", HttpStatus.INTERNAL_SERVER_ERROR);
+      assertGet("/search?q=bacon", HttpStatus.BAD_REQUEST);
     }
     assertGet("/search?q=bacon", HttpStatus.SERVICE_UNAVAILABLE);
   }

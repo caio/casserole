@@ -79,8 +79,6 @@ public class WebController {
                     query, result, UriComponentsBuilder.fromHttpRequest(request)));
   }
 
-  // FIXME verify exception logging
-
   @ExceptionHandler({
     IllegalStateException.class,
     ServerWebInputException.class,
@@ -89,7 +87,7 @@ public class WebController {
   @ResponseStatus(HttpStatus.BAD_REQUEST)
   @ResponseBody
   RockerModel handleBadParameters(Exception ex) {
-    logger.error("Handled bad parameter", ex);
+    logger.debug("Handled bad parameter", ex);
     return modelView.renderError("Invalid/Unknown Parameter", ex.getMessage());
   }
 
@@ -97,6 +95,7 @@ public class WebController {
   @ResponseStatus(HttpStatus.BAD_REQUEST)
   @ResponseBody
   RockerModel handleOverPagination(OverPaginationError ex) {
+    logger.debug("Handled over pagination", ex);
     return modelView.renderError("Invalid Page Number", ex.getMessage());
   }
 
@@ -104,6 +103,7 @@ public class WebController {
   @ResponseStatus(HttpStatus.REQUEST_TIMEOUT)
   @ResponseBody
   RockerModel handleTimeout(TimeoutException ex) {
+    logger.debug("Handled timeout", ex);
     return modelView.renderError(
         "Timeout Error", "We're likely overloaded, please try again in a few minutes");
   }
@@ -112,6 +112,7 @@ public class WebController {
   @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
   @ResponseBody
   RockerModel handleCircuitBreaker(CircuitBreakerOpenException ex) {
+    logger.debug("Handled open circuit", ex);
     return modelView.renderError(
         "Service Unavailable",
         "The site is experiencing an abnormal rate of errors, it might be a while before we're back at full speed");

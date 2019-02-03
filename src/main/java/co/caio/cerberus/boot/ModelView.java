@@ -44,6 +44,7 @@ class ModelView {
       new PageInfo.Builder().title(SEARCH_PAGE_TITLE).build();
   private static final PageInfo defaultErrorPage =
       new PageInfo.Builder().title(ERROR_PAGE_TITLE).build();
+  private static final String DEFAULT_UNKNOWN_ERROR_SUBTITLE = "Unknown Error Cause";
 
   private final int pageSize;
   private final RecipeMetadataDatabase db;
@@ -113,7 +114,10 @@ class ModelView {
         defaultSite,
         defaultErrorPage,
         defaultSearchForm,
-        new ErrorInfo.Builder().title(errorTitle).subtitle(errorSubtitle).build());
+        new ErrorInfo.Builder()
+            .subtitle(errorSubtitle == null ? DEFAULT_UNKNOWN_ERROR_SUBTITLE : errorSubtitle)
+            .title(errorTitle)
+            .build());
   }
 
   class RecipeMetadataRecipeInfoAdapter implements RecipeInfo {
