@@ -7,7 +7,6 @@ import co.caio.cerberus.search.Searcher;
 import com.fizzed.rocker.RockerModel;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerOpenException;
-import io.github.resilience4j.reactor.circuitbreaker.operator.CircuitBreakerOperator;
 import io.micrometer.core.annotation.Timed;
 import java.time.Duration;
 import java.util.Map;
@@ -68,13 +67,12 @@ public class WebController {
       @RequestParam Map<String, String> params, ServerHttpRequest request) {
     SearchQuery query = parser.buildQuery(params);
 
-    return Mono.fromCallable(() -> searcher.search(query))
+    return Mono.fromCallable(() -> breaker.executeCallable(() -> searcher.search(query)))
         // run the search in the parallel scheduler
         .subscribeOn(Schedulers.parallel())
         // and render in the elastic one
         .publishOn(Schedulers.elastic())
         .timeout(timeout)
-        .transform(CircuitBreakerOperator.of(breaker))
         .map(
             result ->
                 modelView.renderSearch(
