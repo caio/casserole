@@ -89,7 +89,7 @@ class SearchParameterParser {
     }
   }
 
-  class SearchParameterException extends RuntimeException {
+  static class SearchParameterException extends RuntimeException {
     SearchParameterException(String message) {
       super(message);
     }

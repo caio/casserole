@@ -120,7 +120,7 @@ class ModelView {
             .build());
   }
 
-  class RecipeMetadataRecipeInfoAdapter implements RecipeInfo {
+  static class RecipeMetadataRecipeInfoAdapter implements RecipeInfo {
     private final RecipeMetadata metadata;
 
     RecipeMetadataRecipeInfoAdapter(RecipeMetadata metadata) {
@@ -158,7 +158,7 @@ class ModelView {
     }
   }
 
-  class OverPaginationError extends RuntimeException {
+  static class OverPaginationError extends RuntimeException {
     OverPaginationError(String message) {
       super(message);
     }
