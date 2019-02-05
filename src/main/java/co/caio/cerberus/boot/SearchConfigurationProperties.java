@@ -17,15 +17,10 @@ public class SearchConfigurationProperties {
   @NotNull @Positive int pageSize;
 
   LuceneConfigurationProperties lucene;
-  LMDBConfigurationProperties lmdb;
   ChronicleConfigurationProperties chronicle;
 
   public void setLucene(LuceneConfigurationProperties lucene) {
     this.lucene = lucene;
-  }
-
-  public void setLmdb(LMDBConfigurationProperties lmdb) {
-    this.lmdb = lmdb;
   }
 
   public void setChronicle(ChronicleConfigurationProperties chronicle) {
@@ -56,19 +51,5 @@ public class SearchConfigurationProperties {
     }
 
     @NotNull Path directory;
-  }
-
-  public static class LMDBConfigurationProperties {
-    Path directory;
-
-    int maxSizeMb;
-
-    public void setDirectory(Path directory) {
-      this.directory = directory;
-    }
-
-    public void setMaxSizeMb(int maxSizeMb) {
-      this.maxSizeMb = maxSizeMb;
-    }
   }
 }
