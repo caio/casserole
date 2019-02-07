@@ -40,9 +40,10 @@ public class RockerModelHttpMessageWriter implements HttpMessageWriter<RockerMod
     return Mono.from(inputStream)
         .flatMap(
             rockerModel -> {
-              var allBytes = rockerModel.render(ArrayOfByteArraysOutput.FACTORY).getArrays();
+              var output = rockerModel.render(ArrayOfByteArraysOutput.FACTORY);
               message.getHeaders().setContentType(MediaType.TEXT_HTML);
-              return message.writeWith(Flux.fromIterable(allBytes).map(bufferFactory::wrap));
+              message.getHeaders().setContentLength(output.getByteLength());
+              return message.writeWith(Flux.fromIterable(output.getArrays()).map(bufferFactory::wrap));
             });
   }
 }
