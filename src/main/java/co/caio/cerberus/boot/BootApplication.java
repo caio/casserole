@@ -2,6 +2,7 @@ package co.caio.cerberus.boot;
 
 import co.caio.cerberus.db.ChronicleRecipeMetadataDatabase;
 import co.caio.cerberus.db.RecipeMetadataDatabase;
+import co.caio.cerberus.search.IndexConfiguration;
 import co.caio.cerberus.search.Searcher;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.micrometer.CircuitBreakerMetrics;
@@ -38,7 +39,10 @@ public class BootApplication {
 
   @Bean
   Searcher getSearcher() {
-    return new Searcher.Builder().dataDirectory(searchConfiguration.lucene.directory).build();
+    return new Searcher.Builder()
+        .analyzer(IndexConfiguration.DEFAULT_ANALYZER)
+        .dataDirectory(searchConfiguration.lucene.directory)
+        .build();
   }
 
   @Bean("searchTimeout")
