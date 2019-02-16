@@ -10,6 +10,7 @@ import co.caio.tablier.model.PageInfo;
 import co.caio.tablier.model.RecipeInfo;
 import co.caio.tablier.model.SearchFormInfo;
 import co.caio.tablier.model.SearchResultsInfo;
+import co.caio.tablier.model.SidebarInfo;
 import co.caio.tablier.model.SiteInfo;
 import co.caio.tablier.view.Error;
 import co.caio.tablier.view.Index;
@@ -31,20 +32,19 @@ class ModelView {
   static final String ERROR_PAGE_TITLE = "An Error Has Occurred";
 
   private static final SiteInfo defaultSite = new SiteInfo.Builder().build();
+  private static final SiteInfo unstableSite = new SiteInfo.Builder().isUnstable(true).build();
   private static final PageInfo defaultIndexPage =
       new PageInfo.Builder().title(INDEX_PAGE_TITLE).build();
   private static final SearchFormInfo defaultSearchForm = new SearchFormInfo.Builder().build();
-  private static final PageInfo unstableIndexPage =
-      new PageInfo.Builder().from(defaultIndexPage).showUnstableWarning(true).build();
-  private static final SearchFormInfo disabledSearchForm =
-      new SearchFormInfo.Builder().isAutoFocus(false).isDisabled(true).build();
   private static final SearchFormInfo.Builder defaultSearchSearchFormBuilder =
-      new SearchFormInfo.Builder().isAutoFocus(false).isDisabled(false).buttonText("Search again");
+      new SearchFormInfo.Builder().isAutoFocus(false);
   private static final PageInfo defaultSearchPage =
       new PageInfo.Builder().title(SEARCH_PAGE_TITLE).build();
   private static final PageInfo defaultErrorPage =
       new PageInfo.Builder().title(ERROR_PAGE_TITLE).build();
   private static final String DEFAULT_UNKNOWN_ERROR_SUBTITLE = "Unknown Error Cause";
+
+  private static final SidebarInfo emptySidebar = new SidebarInfo.Builder().build();
 
   private final int pageSize;
   private final RecipeMetadataDatabase db;
@@ -61,7 +61,7 @@ class ModelView {
   }
 
   RockerModel renderUnstableIndex() {
-    return Index.template(defaultSite, unstableIndexPage, disabledSearchForm);
+    return Index.template(unstableSite, defaultIndexPage, defaultSearchForm);
   }
 
   RockerModel renderSearch(
@@ -79,6 +79,7 @@ class ModelView {
 
       var searchBuilder =
           new SearchResultsInfo.Builder()
+              .sidebar(emptySidebar)
               .paginationStart(query.offset() + 1)
               .paginationEnd(result.recipes().size() + query.offset())
               .numMatching(result.totalHits());
@@ -143,6 +144,11 @@ class ModelView {
     }
 
     @Override
+    public String slug() {
+      return metadata.getSlug();
+    }
+
+    @Override
     public int numIngredients() {
       return metadata.getNumIngredients();
     }
@@ -155,6 +161,16 @@ class ModelView {
     @Override
     public OptionalInt totalTime() {
       return metadata.getTotalTime();
+    }
+
+    @Override
+    public List<String> ingredients() {
+      return metadata.getIngredients();
+    }
+
+    @Override
+    public List<String> instructions() {
+      return metadata.getInstructions();
     }
   }
 

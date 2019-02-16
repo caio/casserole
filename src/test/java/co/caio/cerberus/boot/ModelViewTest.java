@@ -164,7 +164,7 @@ class ModelViewTest {
 
     assertTrue(doc.title().startsWith(ModelView.SEARCH_PAGE_TITLE));
 
-    var subtitle = doc.selectFirst("section#results h2.subtitle").text();
-    assertEquals("Showing recipes 3 to 4 (Out of 4)", subtitle);
+    var subtitle = doc.selectFirst("section#results div.notification.content").text();
+    assertTrue(subtitle.contains("from 3 to 4."));
   }
 }
