@@ -51,9 +51,6 @@ class SearchParameterParserTest {
 
     input.put("page", "4");
     assertEquals(parser.buildQuery(input), builder.offset((4 - 1) * pageSize).build());
-
-    input.put("nf", "12");
-    assertEquals(parser.buildQuery(input), builder.maxFacets(12).build());
   }
 
   @Test

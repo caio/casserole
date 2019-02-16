@@ -26,9 +26,6 @@ class SearchParameterParser {
             case "q":
               builder.fulltext(value);
               break;
-            case "nf":
-              builder.maxFacets(parseUnsignedInt(value));
-              break;
             case "sort":
               builder.sort(parseSortOrder(value));
               break;
