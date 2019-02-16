@@ -35,8 +35,8 @@ class SearchParameterParser {
             case "ni":
               builder.numIngredients(parseRange(value));
               break;
-            case "ct":
-              builder.cookTime(parseRange(value));
+            case "tt":
+              builder.totalTime(parseRange(value));
               break;
             case "n_k":
               builder.calories(parseRange(value));
