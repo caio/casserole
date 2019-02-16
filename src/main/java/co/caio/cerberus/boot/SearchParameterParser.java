@@ -34,6 +34,9 @@ class SearchParameterParser {
             case "ni":
               builder.numIngredients(parseRange(value));
               break;
+            case "ct":
+              builder.cookTime(parseRange(value));
+              break;
             case "page":
               // page starts from 1, not 0
               builder.offset((parseUnsignedInt(value) - 1) * pageSize);
