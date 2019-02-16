@@ -3,7 +3,6 @@ package co.caio.cerberus.boot;
 import co.caio.cerberus.db.RecipeMetadata;
 import co.caio.cerberus.db.RecipeMetadataDatabase;
 import co.caio.cerberus.model.SearchQuery;
-import co.caio.cerberus.model.SearchQuery.SortOrder;
 import co.caio.cerberus.model.SearchResult;
 import co.caio.cerberus.model.SearchResultRecipe;
 import co.caio.tablier.model.ErrorInfo;
@@ -112,11 +111,6 @@ class ModelView {
 
       var sbb = new SidebarInfo.Builder();
 
-      for (SortOrder order : SortOrder.values()) {
-        // FIXME proper sort order labels
-        sbb.addSortOption(order.toString(), order.toString(), order.equals(query.sort()));
-      }
-
       // Filters always lead to the first page
       // FIXME test
       uriBuilder.replaceQueryParam("page");
@@ -125,6 +119,24 @@ class ModelView {
       // we'll end up overwriting previous selections or poisoning the
       // uris for the subsequent filters
       var ub = uriBuilder.cloneBuilder();
+
+      sbb.addFilters(
+          new FilterInfo.Builder()
+              .showCounts(false)
+              .name("Sort recipes by")
+              .addOption(
+                  "Relevance", ub.replaceQueryParam("sort", "relevance").build().toUriString(), 0)
+              .addOption(
+                  "Fastest to Cook",
+                  ub.replaceQueryParam("sort", "total_time").build().toUriString(),
+                  0)
+              .addOption(
+                  "Least Ingredients",
+                  ub.replaceQueryParam("sort", "num_ingredients").build().toUriString(),
+                  0)
+              .build());
+
+      ub = uriBuilder.cloneBuilder();
       sbb.addFilters(
           new FilterInfo.Builder()
               .showCounts(false)
