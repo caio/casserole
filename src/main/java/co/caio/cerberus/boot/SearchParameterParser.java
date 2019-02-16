@@ -74,7 +74,12 @@ class SearchParameterParser {
     try {
       if (input.contains(",")) {
         var scanner = new Scanner(input).useDelimiter(",");
-        var spec = RangedSpec.of(scanner.nextInt(), scanner.nextInt());
+
+        int start = scanner.nextInt();
+        int end = scanner.nextInt();
+
+        // We encode a range like [x, infinity[ as x,0
+        var spec = RangedSpec.of(start, end == 0 ? Integer.MAX_VALUE : end);
         if (scanner.hasNext()) {
           throw new SearchParameterException("Invalid range: " + input);
         }

@@ -67,6 +67,8 @@ class SearchParameterParserTest {
     assertEquals(RangedSpec.of(0, 10), parser.parseRange("10"));
     // Ranges are encoded as "numberA,numberB"
     assertEquals(RangedSpec.of(1, 10), parser.parseRange("1,10"));
+    // Special case: "numberA,0" means [numberA, MAX]
+    assertEquals(RangedSpec.of(42, Integer.MAX_VALUE), parser.parseRange("42,0"));
 
     assertThrows(SearchParameterException.class, () -> parser.parseRange("asd"));
 
