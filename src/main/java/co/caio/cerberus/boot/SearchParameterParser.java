@@ -19,6 +19,7 @@ class SearchParameterParser {
   SearchQuery buildQuery(Map<String, String> params) {
     var builder = new SearchQuery.Builder().maxResults(pageSize);
 
+    // TODO jdk12 switches plz
     params.forEach(
         (param, value) -> {
           switch (param) {
@@ -42,6 +43,9 @@ class SearchParameterParser {
               break;
             case "n_f":
               builder.fatContent(parseRange(value));
+              break;
+            case "n_c":
+              builder.carbohydrateContent(parseRange(value));
               break;
             case "page":
               // page starts from 1, not 0
