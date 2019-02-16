@@ -32,6 +32,10 @@ class SearchParameterParserTest {
     input.put("ct", "10");
     assertEquals(parser.buildQuery(input), builder.cookTime(RangedSpec.of(0, 10)).build());
 
+    input.put("n_k", "200,0");
+    assertEquals(
+        parser.buildQuery(input), builder.calories(RangedSpec.of(200, Integer.MAX_VALUE)).build());
+
     input.put("page", "1");
     assertEquals(parser.buildQuery(input), builder.build());
 
