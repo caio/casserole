@@ -14,6 +14,7 @@ import co.caio.tablier.model.SidebarInfo;
 import co.caio.tablier.model.SiteInfo;
 import co.caio.tablier.view.Error;
 import co.caio.tablier.view.Index;
+import co.caio.tablier.view.Recipe;
 import co.caio.tablier.view.Search;
 import co.caio.tablier.view.ZeroResults;
 import com.fizzed.rocker.RockerModel;
@@ -35,9 +36,10 @@ class ModelView {
   private static final SiteInfo unstableSite = new SiteInfo.Builder().isUnstable(true).build();
   private static final PageInfo defaultIndexPage =
       new PageInfo.Builder().title(INDEX_PAGE_TITLE).build();
-  private static final SearchFormInfo defaultSearchForm = new SearchFormInfo.Builder().build();
-  private static final SearchFormInfo.Builder defaultSearchSearchFormBuilder =
-      new SearchFormInfo.Builder().isAutoFocus(false);
+  private static final SearchFormInfo autoFocusSearchForm =
+      new SearchFormInfo.Builder().isAutoFocus(true).build();
+  private static final SearchFormInfo defaultSearchForm =
+      new SearchFormInfo.Builder().isAutoFocus(false).build();
   private static final PageInfo defaultSearchPage =
       new PageInfo.Builder().title(SEARCH_PAGE_TITLE).build();
   private static final PageInfo defaultErrorPage =
@@ -57,7 +59,7 @@ class ModelView {
   }
 
   RockerModel renderIndex() {
-    return Index.template(defaultSite, defaultIndexPage, defaultSearchForm);
+    return Index.template(defaultSite, defaultIndexPage, autoFocusSearchForm);
   }
 
   RockerModel renderUnstableIndex() {
@@ -67,7 +69,8 @@ class ModelView {
   RockerModel renderSearch(
       SearchQuery query, SearchResult result, UriComponentsBuilder uriBuilder) {
 
-    var searchForm = defaultSearchSearchFormBuilder.value(query.fulltext().orElse("")).build();
+    var searchForm =
+        new SearchFormInfo.Builder().isAutoFocus(false).value(query.fulltext().orElse("")).build();
 
     if (result.totalHits() == 0) {
       return ZeroResults.template(defaultSite, defaultSearchPage, searchForm);
@@ -104,8 +107,7 @@ class ModelView {
 
   private Iterable<RecipeInfo> renderRecipes(List<SearchResultRecipe> recipes) {
     var recipeIds = recipes.stream().map(SearchResultRecipe::recipeId).collect(Collectors.toList());
-    return db.findAllById(recipeIds)
-        .stream()
+    return db.findAllById(recipeIds).stream()
         .map(RecipeMetadataRecipeInfoAdapter::new)
         .collect(Collectors.toList());
   }
@@ -119,6 +121,20 @@ class ModelView {
             .subtitle(errorSubtitle == null ? DEFAULT_UNKNOWN_ERROR_SUBTITLE : errorSubtitle)
             .title(errorTitle)
             .build());
+  }
+
+  RockerModel renderSingleRecipe(long recipeId, String slug) {
+    var recipe = db.findById(recipeId).orElseThrow(RecipeNotFoundError::new);
+
+    if (!slug.equals(recipe.getSlug())) {
+      throw new RecipeNotFoundError();
+    }
+
+    return Recipe.template(
+        defaultSite,
+        new PageInfo.Builder().title(recipe.getName()).build(),
+        defaultSearchForm,
+        new RecipeMetadataRecipeInfoAdapter(recipe));
   }
 
   static class RecipeMetadataRecipeInfoAdapter implements RecipeInfo {
@@ -145,7 +161,7 @@ class ModelView {
 
     @Override
     public String slug() {
-      return metadata.getSlug();
+      return String.format("%s/%d", metadata.getSlug(), metadata.getRecipeId());
     }
 
     @Override
@@ -177,6 +193,12 @@ class ModelView {
   static class OverPaginationError extends RuntimeException {
     OverPaginationError(String message) {
       super(message);
+    }
+  }
+
+  static class RecipeNotFoundError extends RuntimeException {
+    RecipeNotFoundError() {
+      super();
     }
   }
 }

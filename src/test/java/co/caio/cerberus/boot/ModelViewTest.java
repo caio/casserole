@@ -2,12 +2,16 @@ package co.caio.cerberus.boot;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import co.caio.cerberus.Util;
 import co.caio.cerberus.boot.ModelView.OverPaginationError;
+import co.caio.cerberus.boot.ModelView.RecipeNotFoundError;
 import co.caio.cerberus.db.HashMapRecipeMetadataDatabase;
+import co.caio.cerberus.db.RecipeMetadata;
 import co.caio.cerberus.model.SearchQuery;
 import co.caio.cerberus.model.SearchResult;
 import com.fizzed.rocker.RockerModel;
 import com.fizzed.rocker.runtime.StringBuilderOutput;
+import java.util.stream.Collectors;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.junit.jupiter.api.BeforeEach;
@@ -17,9 +21,16 @@ import org.springframework.web.util.UriComponentsBuilder;
 class ModelViewTest {
 
   private static final int pageSize = 2; // just to simplify pagination testing
-  private static final ModelView modelView =
-      new ModelView(pageSize, new HashMapRecipeMetadataDatabase());
+  private static final ModelView modelView;
+
   private UriComponentsBuilder uriBuilder;
+
+  static {
+    var db = new HashMapRecipeMetadataDatabase();
+    db.saveAll(
+        Util.getSampleRecipes().map(RecipeMetadata::fromRecipe).collect(Collectors.toList()));
+    modelView = new ModelView(pageSize, db);
+  }
 
   private Document parseOutput(RockerModel rockerModel) {
     var rendered = rockerModel.render(StringBuilderOutput.FACTORY).toString();
@@ -166,5 +177,26 @@ class ModelViewTest {
 
     var subtitle = doc.selectFirst("section#results div.notification.content").text();
     assertTrue(subtitle.contains("from 3 to 4."));
+  }
+
+  @Test
+  void incorrectSlugYieldsNotFound() {
+    var recipe = Util.getSampleRecipes().limit(1).findFirst().orElseThrow();
+    assertThrows(
+        RecipeNotFoundError.class,
+        () -> modelView.renderSingleRecipe(recipe.recipeId(), "incorrect slug"));
+  }
+
+  @Test
+  void incorrectIdYieldsNotFound() {
+    var recipe = Util.getSampleRecipes().limit(1).findFirst().orElseThrow();
+    assertThrows(RecipeNotFoundError.class, () -> modelView.renderSingleRecipe(213, recipe.slug()));
+  }
+
+  @Test
+  void renderSingleRecipe() {
+    var recipe = Util.getSampleRecipes().limit(1).findFirst().orElseThrow();
+    var doc = parseOutput(modelView.renderSingleRecipe(recipe.recipeId(), recipe.slug()));
+    assertTrue(doc.title().startsWith(recipe.name()));
   }
 }

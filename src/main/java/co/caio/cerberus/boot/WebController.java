@@ -1,6 +1,7 @@
 package co.caio.cerberus.boot;
 
 import co.caio.cerberus.boot.ModelView.OverPaginationError;
+import co.caio.cerberus.boot.ModelView.RecipeNotFoundError;
 import co.caio.cerberus.boot.SearchParameterParser.SearchParameterException;
 import co.caio.cerberus.model.SearchQuery;
 import co.caio.cerberus.search.Searcher;
@@ -19,6 +20,7 @@ import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -58,6 +60,13 @@ public class WebController {
     } else {
       return modelView.renderUnstableIndex();
     }
+  }
+
+  @Timed
+  @GetMapping("/recipe/{slug}/{recipeId}")
+  @ResponseBody
+  public RockerModel recipe(@PathVariable String slug, @PathVariable long recipeId) {
+    return modelView.renderSingleRecipe(recipeId, slug);
   }
 
   @Timed
@@ -116,6 +125,13 @@ public class WebController {
     return modelView.renderError(
         "Service Unavailable",
         "The site is experiencing an abnormal rate of errors, it might be a while before we're back at full speed");
+  }
+
+  @ExceptionHandler
+  @ResponseStatus(HttpStatus.NOT_FOUND)
+  @ResponseBody
+  RockerModel handleRecipeNotFound(RecipeNotFoundError ex) {
+    return modelView.renderError("Recipe Not Found", "Looks like this URL is invalid");
   }
 
   @ExceptionHandler
