@@ -18,6 +18,7 @@ import co.caio.tablier.view.Recipe;
 import co.caio.tablier.view.Search;
 import co.caio.tablier.view.ZeroResults;
 import com.fizzed.rocker.RockerModel;
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import java.util.List;
 import java.util.OptionalInt;
 import java.util.stream.Collectors;
@@ -50,20 +51,23 @@ class ModelView {
 
   private final int pageSize;
   private final RecipeMetadataDatabase db;
+  private final CircuitBreaker breaker;
 
   ModelView(
       @Qualifier("searchPageSize") int pageSize,
-      @Qualifier("metadataDb") RecipeMetadataDatabase db) {
+      @Qualifier("metadataDb") RecipeMetadataDatabase db,
+      CircuitBreaker breaker) {
     this.pageSize = pageSize;
+    this.breaker = breaker;
     this.db = db;
   }
 
   RockerModel renderIndex() {
-    return Index.template(defaultSite, defaultIndexPage, autoFocusSearchForm);
-  }
-
-  RockerModel renderUnstableIndex() {
-    return Index.template(unstableSite, defaultIndexPage, defaultSearchForm);
+    if (breaker.isCallPermitted()) {
+      return Index.template(defaultSite, defaultIndexPage, autoFocusSearchForm);
+    } else {
+      return Index.template(unstableSite, defaultIndexPage, defaultSearchForm);
+    }
   }
 
   RockerModel renderSearch(
@@ -107,7 +111,8 @@ class ModelView {
 
   private Iterable<RecipeInfo> renderRecipes(List<SearchResultRecipe> recipes) {
     var recipeIds = recipes.stream().map(SearchResultRecipe::recipeId).collect(Collectors.toList());
-    return db.findAllById(recipeIds).stream()
+    return db.findAllById(recipeIds)
+        .stream()
         .map(RecipeMetadataRecipeInfoAdapter::new)
         .collect(Collectors.toList());
   }

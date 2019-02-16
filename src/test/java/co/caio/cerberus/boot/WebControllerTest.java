@@ -63,8 +63,9 @@ class WebControllerTest {
     }
 
     @Bean
-    ModelView modelView(@Qualifier("metadataDb") RecipeMetadataDatabase db) {
-      return new ModelView(pageSize(), db);
+    ModelView modelView(
+        @Qualifier("metadataDb") RecipeMetadataDatabase db, CircuitBreaker breaker) {
+      return new ModelView(pageSize(), db, breaker);
     }
 
     @Bean("metadataDb")

@@ -55,11 +55,7 @@ public class WebController {
   @GetMapping("/")
   @ResponseBody
   public RockerModel index() {
-    if (breaker.isCallPermitted()) {
-      return modelView.renderIndex();
-    } else {
-      return modelView.renderUnstableIndex();
-    }
+    return modelView.renderIndex();
   }
 
   @Timed

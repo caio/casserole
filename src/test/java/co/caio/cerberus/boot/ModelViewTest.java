@@ -11,6 +11,7 @@ import co.caio.cerberus.model.SearchQuery;
 import co.caio.cerberus.model.SearchResult;
 import com.fizzed.rocker.RockerModel;
 import com.fizzed.rocker.runtime.StringBuilderOutput;
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import java.util.stream.Collectors;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -22,6 +23,7 @@ class ModelViewTest {
 
   private static final int pageSize = 2; // just to simplify pagination testing
   private static final ModelView modelView;
+  private static final CircuitBreaker breaker = CircuitBreaker.ofDefaults("mvt");
 
   private UriComponentsBuilder uriBuilder;
 
@@ -29,7 +31,7 @@ class ModelViewTest {
     var db = new HashMapRecipeMetadataDatabase();
     db.saveAll(
         Util.getSampleRecipes().map(RecipeMetadata::fromRecipe).collect(Collectors.toList()));
-    modelView = new ModelView(pageSize, db);
+    modelView = new ModelView(pageSize, db, breaker);
   }
 
   private Document parseOutput(RockerModel rockerModel) {
@@ -38,8 +40,9 @@ class ModelViewTest {
   }
 
   @BeforeEach
-  void setupUriBuilder() {
+  void setup() {
     uriBuilder = UriComponentsBuilder.fromUriString("/renderer");
+    breaker.reset();
   }
 
   @Test
@@ -50,7 +53,8 @@ class ModelViewTest {
 
   @Test
   void renderUnstableIndex() {
-    var doc = parseOutput(modelView.renderUnstableIndex());
+    breaker.transitionToOpenState();
+    var doc = parseOutput(modelView.renderIndex());
     assertTrue(doc.title().startsWith(ModelView.INDEX_PAGE_TITLE));
 
     // The warning is displayed
