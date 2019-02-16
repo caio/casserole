@@ -79,9 +79,7 @@ class ModelViewTest {
 
     var doc = parseOutput(modelView.renderSearch(unusedQuery, result, uriBuilder));
     assertTrue(doc.title().startsWith(ModelView.SEARCH_PAGE_TITLE));
-    assertEquals(
-        "Couldn't find any recipe matching your search :(",
-        doc.selectFirst("section#results h2.subtitle").text());
+    assertEquals("Try changing your query", doc.selectFirst("section#results h2.subtitle").text());
   }
 
   @Test
