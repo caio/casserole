@@ -1,21 +1,16 @@
 package co.caio.cerberus.boot;
 
-import co.caio.cerberus.boot.SidebarComponent.SortOptionSpec;
 import co.caio.cerberus.db.RecipeMetadata;
 import co.caio.cerberus.db.RecipeMetadataDatabase;
 import co.caio.cerberus.model.SearchQuery;
 import co.caio.cerberus.model.SearchQuery.RangedSpec;
-import co.caio.cerberus.model.SearchQuery.SortOrder;
 import co.caio.cerberus.model.SearchResult;
 import co.caio.cerberus.model.SearchResultRecipe;
 import co.caio.tablier.model.ErrorInfo;
-import co.caio.tablier.model.FilterInfo;
-import co.caio.tablier.model.FilterInfo.FilterOption;
 import co.caio.tablier.model.PageInfo;
 import co.caio.tablier.model.RecipeInfo;
 import co.caio.tablier.model.SearchFormInfo;
 import co.caio.tablier.model.SearchResultsInfo;
-import co.caio.tablier.model.SidebarInfo;
 import co.caio.tablier.model.SiteInfo;
 import co.caio.tablier.view.Error;
 import co.caio.tablier.view.Index;
@@ -118,7 +113,7 @@ class ModelView {
       // FIXME test
       uriBuilder.replaceQueryParam("page");
 
-      searchBuilder.sidebar(sidebarComponent.build(query,uriBuilder));
+      searchBuilder.sidebar(sidebarComponent.build(query, uriBuilder));
 
       return Search.template(defaultSite, defaultSearchPage, searchForm, searchBuilder.build());
     }

@@ -9,7 +9,7 @@ import co.caio.tablier.model.SidebarInfo;
 import java.util.List;
 import org.springframework.web.util.UriComponentsBuilder;
 
-public class SidebarComponent {
+class SidebarComponent {
 
   static final String SORT_INFO_NAME = "Sort recipes by";
   static final String INGREDIENTS_INFO_NAME = "Limit Ingredients";
