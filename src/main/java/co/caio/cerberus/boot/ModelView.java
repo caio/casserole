@@ -4,10 +4,12 @@ import co.caio.cerberus.db.RecipeMetadata;
 import co.caio.cerberus.db.RecipeMetadataDatabase;
 import co.caio.cerberus.model.SearchQuery;
 import co.caio.cerberus.model.SearchQuery.RangedSpec;
+import co.caio.cerberus.model.SearchQuery.SortOrder;
 import co.caio.cerberus.model.SearchResult;
 import co.caio.cerberus.model.SearchResultRecipe;
 import co.caio.tablier.model.ErrorInfo;
 import co.caio.tablier.model.FilterInfo;
+import co.caio.tablier.model.FilterInfo.FilterOption;
 import co.caio.tablier.model.PageInfo;
 import co.caio.tablier.model.RecipeInfo;
 import co.caio.tablier.model.SearchFormInfo;
@@ -71,6 +73,91 @@ class ModelView {
     }
   }
 
+  static class SortOptionSpec {
+    private final String name;
+    private final SortOrder order;
+    private final String queryValue;
+
+    SortOptionSpec(String name, SortOrder order, String queryValue) {
+      this.name = name;
+      this.order = order;
+      this.queryValue = queryValue;
+    }
+
+    FilterOption buildOption(UriComponentsBuilder uriBuilder, SortOrder active) {
+
+      var href = uriBuilder.replaceQueryParam("sort", queryValue);
+
+      return new FilterInfo.FilterOption.Builder()
+          .name(name)
+          .isActive(active.equals(order))
+          .href(href.build().toUriString())
+          .build();
+    }
+  }
+
+  static class RangeOptionSpec {
+
+    private final String name;
+    private final int start;
+    private final int end;
+    private final String queryName;
+    private final String queryValue;
+
+    RangeOptionSpec(String name, int start, int end, String queryName) {
+      this.name = name;
+      this.start = start;
+      this.end = end;
+      this.queryName = queryName;
+      this.queryValue = String.format("%d,%d", start, end == Integer.MAX_VALUE ? 0 : end);
+    }
+
+    FilterOption buildOption(UriComponentsBuilder uriBuilder, RangedSpec selected) {
+      var isActive = selected.start() == start && selected.end() == end;
+
+      var href =
+          isActive
+              ? uriBuilder.replaceQueryParam(queryName)
+              : uriBuilder.replaceQueryParam(queryName, queryValue);
+
+      return new FilterInfo.FilterOption.Builder()
+          .name(name)
+          .isActive(isActive)
+          .href(href.build().toUriString())
+          .build();
+    }
+  }
+
+  private static final List<SortOptionSpec> sortOptions =
+      List.of(
+          new SortOptionSpec("Relevance", SortOrder.RELEVANCE, "relevance"),
+          new SortOptionSpec("Fastest to Cook", SortOrder.TOTAL_TIME, "total_time"),
+          new SortOptionSpec("Least Ingredients", SortOrder.NUM_INGREDIENTS, "num_ingredients"));
+
+  private static final List<RangeOptionSpec> ingredientFilterOptions =
+      List.of(
+          new RangeOptionSpec("Up to 5", 0, 5, "ni"),
+          new RangeOptionSpec("From 6 to 10", 6, 10, "ni"),
+          new RangeOptionSpec("More than 10", 10, Integer.MAX_VALUE, "ni"));
+
+  private static final List<RangeOptionSpec> totalTimeFilterOptions =
+      List.of(
+          new RangeOptionSpec("Up to 15 minutes", 0, 15, "tt"),
+          new RangeOptionSpec("From 15 to 30 minutes", 15, 30, "tt"),
+          new RangeOptionSpec("From 30 to 60 minutes", 30, 60, "tt"),
+          new RangeOptionSpec("One hour or more", 60, Integer.MAX_VALUE, "tt"));
+
+  private static final List<RangeOptionSpec> caloriesFilterOptions =
+      List.of(
+          new RangeOptionSpec("Up to 200 kcal", 0, 200, "n_k"),
+          new RangeOptionSpec("Up to 500 kcal", 0, 500, "n_k"));
+
+  private static final List<RangeOptionSpec> fatFilterOptions =
+      List.of(new RangeOptionSpec("Up to 10g of Fat", 0, 10, "n_f"));
+
+  private static final List<RangeOptionSpec> carbsFilterOptions =
+      List.of(new RangeOptionSpec("Up to 30g of Carbs", 0, 30, "n_c"));
+
   RockerModel renderSearch(
       SearchQuery query, SearchResult result, UriComponentsBuilder uriBuilder) {
 
@@ -120,101 +207,68 @@ class ModelView {
       // We need to clone the builder for every group of filters otherwise
       // we'll end up overwriting previous selections or poisoning the
       // uris for the subsequent filters
+      // SORTING
       var ub = uriBuilder.cloneBuilder();
 
-      var activeSort = query.sort().toString().toLowerCase();
-      sbb.addFilters(
-          new FilterInfo.Builder()
-              .showCounts(false)
-              .isRemovable(false)
-              .name("Sort recipes by")
-              .addOption(
-                  "Relevance",
-                  ub.replaceQueryParam("sort", "relevance").build().toUriString(),
-                  activeSort.equals("relevance"))
-              .addOption(
-                  "Fastest to Cook",
-                  ub.replaceQueryParam("sort", "total_time").build().toUriString(),
-                  activeSort.equals("total_time"))
-              .addOption(
-                  "Least Ingredients",
-                  ub.replaceQueryParam("sort", "num_ingredients").build().toUriString(),
-                  activeSort.equals("num_ingredients"))
-              .build());
+      var sortInfoBuilder =
+          new FilterInfo.Builder().showCounts(false).isRemovable(false).name("Sort recipes by");
 
-      // FIXME invert hrefs when active
+      for (SortOptionSpec spec : sortOptions) {
+        sortInfoBuilder.addOptions(spec.buildOption(ub, query.sort()));
+      }
+
+      sbb.addFilters(sortInfoBuilder.build());
+
+      // INGREDIENTS
       ub = uriBuilder.cloneBuilder();
       var activeIng = query.numIngredients().orElse(unselectedRange);
-      sbb.addFilters(
-          new FilterInfo.Builder()
-              .showCounts(false)
-              .name("Limit Ingredients")
-              .addOption(
-                  "Less than 5",
-                  ub.replaceQueryParam("ni", "5").build().toUriString(),
-                  activeIng.start() == 0 && activeIng.end() == 5)
-              .addOption(
-                  "6 to 10",
-                  ub.replaceQueryParam("ni", "6,10").build().toUriString(),
-                  activeIng.start() == 6 && activeIng.end() == 10)
-              .addOption(
-                  "More than 10",
-                  ub.replaceQueryParam("ni", "11,0").build().toUriString(),
-                  activeIng.start() == 11 && activeIng.end() == Integer.MAX_VALUE)
-              .build());
 
+      var ingredientsFilterInfoBuilder =
+          new FilterInfo.Builder().showCounts(false).name("Limit Ingredients");
+
+      for (var spec : ingredientFilterOptions) {
+        ingredientsFilterInfoBuilder.addOptions(spec.buildOption(ub, activeIng));
+      }
+
+      sbb.addFilters(ingredientsFilterInfoBuilder.build());
+
+      // TOTAL TIME
       ub = uriBuilder.cloneBuilder();
-      var activeCT = query.totalTime().orElse(unselectedRange);
-      sbb.addFilters(
-          new FilterInfo.Builder()
-              .showCounts(false)
-              .name("Limit Cook Time")
-              .addOption(
-                  "Up to 15 minutes",
-                  ub.replaceQueryParam("tt", "15").build().toUriString(),
-                  activeCT.start() == 0 && activeCT.end() == 15)
-              .addOption(
-                  "15 to 30 minutes",
-                  ub.replaceQueryParam("tt", "15,30").build().toUriString(),
-                  activeCT.start() == 15 && activeCT.end() == 30)
-              .addOption(
-                  "30 to 60 minutes",
-                  ub.replaceQueryParam("tt", "30,60").build().toUriString(),
-                  activeCT.start() == 30 && activeCT.end() == 60)
-              .addOption(
-                  "One hour or more",
-                  ub.replaceQueryParam("tt", "60,0").build().toUriString(),
-                  activeCT.start() == 60 && activeCT.end() == Integer.MAX_VALUE)
-              .build());
+      var activeTT = query.totalTime().orElse(unselectedRange);
+      var timeFilterInfoBuilder =
+          new FilterInfo.Builder().showCounts(false).name("Limit Total Time");
 
-      var nutritionFilterBuilder =
+      for (var spec : totalTimeFilterOptions) {
+        timeFilterInfoBuilder.addOptions(spec.buildOption(ub, activeTT));
+      }
+
+      sbb.addFilters(timeFilterInfoBuilder.build());
+
+      // NUTRITION
+      // TODO We use mixed queryValues in this filter, make sure we're
+      //      not poisoning the urls
+      var activeKcal = query.calories().orElse(unselectedRange);
+      var activeFat = query.fatContent().orElse(unselectedRange);
+      var activeCarbs = query.carbohydrateContent().orElse(unselectedRange);
+      var nutritionFilterInfoBuilder =
           new FilterInfo.Builder().showCounts(false).name("Limit Nutrition (per serving)");
 
       ub = uriBuilder.cloneBuilder();
-      var activeCal = query.calories().orElse(unselectedRange);
-      nutritionFilterBuilder
-          .addOption(
-              "Up to 200 kcal",
-              ub.replaceQueryParam("n_k", "200").build().toUriString(),
-              activeCal.start() == 0 && activeCal.end() == 200)
-          .addOption(
-              "Up to 500 kcal",
-              ub.replaceQueryParam("n_k", "500").build().toUriString(),
-              activeCal.start() == 0 && activeCal.end() == 500);
+      for (var spec : caloriesFilterOptions) {
+        nutritionFilterInfoBuilder.addOptions(spec.buildOption(ub, activeKcal));
+      }
 
-      var activeFat = query.fatContent().orElse(unselectedRange);
-      nutritionFilterBuilder.addOption(
-          "Up to 10g of Fat",
-          ub.cloneBuilder().replaceQueryParam("n_f", "10").build().toUriString(),
-          activeFat.start() == 0 && activeFat.end() == 10);
+      ub = uriBuilder.cloneBuilder();
+      for (var spec : fatFilterOptions) {
+        nutritionFilterInfoBuilder.addOptions(spec.buildOption(ub, activeFat));
+      }
 
-      var activeCarbs = query.carbohydrateContent().orElse(unselectedRange);
-      nutritionFilterBuilder.addOption(
-          "Up to 30g of Carbs",
-          ub.cloneBuilder().replaceQueryParam("n_c", "30").build().toUriString(),
-          activeCarbs.start() == 0 && activeCarbs.end() == 30);
+      ub = uriBuilder.cloneBuilder();
+      for (var spec : carbsFilterOptions) {
+        nutritionFilterInfoBuilder.addOptions(spec.buildOption(ub, activeCarbs));
+      }
 
-      sbb.addFilters(nutritionFilterBuilder.build());
+      sbb.addFilters(nutritionFilterInfoBuilder.build());
 
       searchBuilder.sidebar(sbb.build());
 
