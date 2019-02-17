@@ -163,6 +163,24 @@ class ModelViewTest {
   }
 
   @Test
+  void sidebarLinksDropThePageParameter() {
+
+    var secondPage = new SearchQuery.Builder().fulltext("unused").offset(pageSize).build();
+    var offsetResultWithNextPage =
+        new SearchResult.Builder()
+            .totalHits(4) // 2 (first page) + 2 (this result)
+            .addRecipe(3, "recipe 3", "doest matter")
+            .addRecipe(4, "recipe 4", "doest matter")
+            .build();
+
+    var doc = parseOutput(modelView.renderSearch(secondPage, offsetResultWithNextPage, uriBuilder));
+
+    var sidebarLinks = doc.select("div#sidebar div.filter-group li a.button").eachAttr("href");
+    assertTrue(sidebarLinks.size() > 0);
+    assertTrue(sidebarLinks.stream().noneMatch(s -> s.contains("page=")));
+  }
+
+  @Test
   void regressionPaginationEndHasProperValue() {
 
     var secondPage = new SearchQuery.Builder().fulltext("unused").offset(pageSize).build();

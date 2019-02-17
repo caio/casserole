@@ -20,6 +20,7 @@ import co.caio.tablier.view.ZeroResults;
 import com.fizzed.rocker.RockerModel;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import java.util.List;
+import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -104,19 +105,31 @@ class ModelView {
 
       searchBuilder.recipes(renderRecipes(result.recipes()));
 
-      // TODO interpret SearchQuery filters so that we can display an
-      //      explanation such as "searched for avocado, with 6 to 10 ingredients
-      //      and cook time less than 15 minutes.
-      // XXX maybe add a link to reset filters
-
-      // Filters always lead to the first page
-      // FIXME test
+      // Sidebar links always lead to the first page
       uriBuilder.replaceQueryParam("page");
-
       searchBuilder.sidebar(sidebarComponent.build(query, uriBuilder));
+
+      searchBuilder.numAppliedFilters(deriveAppliedFilters(query));
 
       return Search.template(defaultSite, defaultSearchPage, searchForm, searchBuilder.build());
     }
+  }
+
+  int deriveAppliedFilters(SearchQuery query) {
+    // XXX This is very error prone as I'll need to keep in sync with
+    //     the SearchQuery evolution manually. It could be computed
+    //     during the build phase for better speed AND correcness,
+    //     but right now it's too annoying to do it with immutables
+    return (int)
+        List.of(
+                query.numIngredients(),
+                query.totalTime(),
+                query.calories(),
+                query.fatContent(),
+                query.carbohydrateContent())
+            .stream()
+            .flatMap(Optional::stream)
+            .count();
   }
 
   private Iterable<RecipeInfo> renderRecipes(List<SearchResultRecipe> recipes) {
