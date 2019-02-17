@@ -3,9 +3,13 @@ package co.caio.cerberus.boot;
 import static org.junit.jupiter.api.Assertions.*;
 
 import co.caio.cerberus.model.SearchQuery;
+import co.caio.cerberus.model.SearchQuery.RangedSpec;
 import co.caio.cerberus.model.SearchQuery.SortOrder;
 import co.caio.tablier.model.FilterInfo;
+import co.caio.tablier.model.FilterInfo.FilterOption;
 import co.caio.tablier.model.SidebarInfo;
+import java.util.List;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.util.MultiValueMap;
@@ -19,26 +23,14 @@ class SidebarComponentTest {
 
   @BeforeEach
   void setup() {
-    uriBuilder = UriComponentsBuilder.newInstance();
-    uriBuilder.path("/test");
+    uriBuilder = UriComponentsBuilder.fromUriString("/test");
   }
 
   @Test
   void sortOptionsCantBeRemovedAndDonNotHaveCounts() {
-    var sbb = new SidebarInfo.Builder();
     var query = new SearchQuery.Builder().fulltext("pecan").build();
-
-    sidebarComponent.addSortOptions(sbb, query, uriBuilder);
-
-    var sidebar = sbb.build();
-
-    var sorts =
-        sidebar
-            .filters()
-            .stream()
-            .filter(fi -> fi.name().equals(SidebarComponent.SORT_INFO_NAME))
-            .findFirst()
-            .orElseThrow();
+    var sidebar = sidebarComponent.build(query, uriBuilder);
+    var sorts = findFilterInfo(sidebar, SidebarComponent.SORT_INFO_NAME);
 
     assertFalse(sorts.isRemovable());
     assertFalse(sorts.showCounts());
@@ -47,7 +39,7 @@ class SidebarComponentTest {
   @Test
   void selectedSortIsMarkedAsActive() {
     for (SortOrder order : SortOrder.values()) {
-      var query = new SearchQuery.Builder().fulltext("pecan").sort(order).build();
+      var query = new SearchQuery.Builder().fulltext("ignored").sort(order).build();
       var info =
           findFilterInfo(
               sidebarComponent.build(query, uriBuilder), SidebarComponent.SORT_INFO_NAME);
@@ -63,7 +55,97 @@ class SidebarComponentTest {
     }
   }
 
-  // TODO test multi selection, isActive
+  @Test
+  void selectedFiltersAreMarkedAsActive() {
+    // Right now there isn't a way to know which RangedSpecs are implemented
+    // in the sidebar so these RangedSpec.of() calls are hardcoded. Not sure
+    // if I care enough to make this more programmable as there's only value
+    // for this particular test now
+    var query =
+        new SearchQuery.Builder()
+            .fulltext("ignored")
+            .numIngredients(RangedSpec.of(0, 5))
+            .totalTime(RangedSpec.of(15, 30))
+            .calories(RangedSpec.of(0, 200))
+            .fatContent(RangedSpec.of(0, 10))
+            .carbohydrateContent(RangedSpec.of(0, 30))
+            .build();
+
+    var sidebar = sidebarComponent.build(query, uriBuilder);
+
+    var ingredientInfo = findFilterInfo(sidebar, SidebarComponent.INGREDIENTS_INFO_NAME);
+    var activeIngredients = findActive(ingredientInfo);
+    assertEquals(1, activeIngredients.size());
+    assertTrue(activeIngredients.get(0).name().endsWith("to 5"));
+
+    var totalTimeInfo = findFilterInfo(sidebar, SidebarComponent.TIME_INFO_NAME);
+    var activeTimes = findActive(totalTimeInfo);
+    assertEquals(1, activeTimes.size());
+    assertTrue(activeTimes.get(0).name().endsWith("15 to 30 minutes"));
+
+    var nutritionInfo = findFilterInfo(sidebar, SidebarComponent.NUTRITION_INFO_NAME);
+    var activeNutritionList = findActive(nutritionInfo);
+    assertEquals(3, activeNutritionList.size());
+  }
+
+  @Test
+  void activeFilterHrefRemovesFilterParam() {
+    var query =
+        new SearchQuery.Builder().fulltext("ignored").totalTime(RangedSpec.of(30, 60)).build();
+    var sidebar = sidebarComponent.build(query, uriBuilder);
+    var totalTimeInfo = findFilterInfo(sidebar, SidebarComponent.TIME_INFO_NAME);
+    var activeTimes = findActive(totalTimeInfo);
+    assertEquals(1, activeTimes.size());
+    assertEquals("From 30 to 60 minutes", activeTimes.get(0).name());
+    assertEquals("/test", activeTimes.get(0).href());
+  }
+
+  @Test
+  void originalParametersArePreserved() {
+    var query = new SearchQuery.Builder().fulltext("ignored").build();
+    var ub = UriComponentsBuilder.fromUriString("/test?must=preserve");
+    var sidebar = sidebarComponent.build(query, ub);
+
+    sidebar
+        .filters()
+        .forEach(
+            fi ->
+                fi.options()
+                    .forEach(
+                        fo -> {
+                          var params = getQueryParams(fo.href());
+                          assertEquals(2, params.size());
+                          assertEquals("preserve", params.getFirst("must"));
+                        }));
+  }
+
+  @Test
+  void sameFilterCategoryGetsReplacedDifferentCategoryGetsAppended() {
+    var query = new SearchQuery.Builder().fulltext("ignored").build();
+    var ub = UriComponentsBuilder.fromUriString("/test?ni=10,42");
+    var sidebar = sidebarComponent.build(query, ub);
+
+    sidebar
+        .filters()
+        .forEach(
+            fi ->
+                fi.options()
+                    .forEach(
+                        fo -> {
+                          var params = getQueryParams(fo.href());
+                          if (fi.name().equals(SidebarComponent.INGREDIENTS_INFO_NAME)) {
+                            assertEquals(1, params.size());
+                            assertNotEquals("10,42", params.getFirst("ni"));
+                          } else {
+                            assertEquals(2, params.size());
+                            assertEquals("10,42", params.getFirst("ni"));
+                          }
+                        }));
+  }
+
+  List<FilterOption> findActive(FilterInfo info) {
+    return info.options().stream().filter(FilterOption::isActive).collect(Collectors.toList());
+  }
 
   FilterInfo findFilterInfo(SidebarInfo sidebar, String name) {
     return sidebar
@@ -80,12 +162,8 @@ class SidebarComponentTest {
 
   @Test
   void nutritionFilterDoesNotPoisonURIs() {
-    var sbb = new SidebarInfo.Builder();
-    var query = new SearchQuery.Builder().fulltext("pecan").build();
-
-    sidebarComponent.addNutritionFilters(sbb, query, uriBuilder);
-
-    var sidebar = sbb.build();
+    var query = new SearchQuery.Builder().fulltext("ignored").build();
+    var sidebar = sidebarComponent.build(query, uriBuilder);
 
     var nutritionFilters = findFilterInfo(sidebar, SidebarComponent.NUTRITION_INFO_NAME);
 

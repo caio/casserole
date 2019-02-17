@@ -29,7 +29,7 @@ class SidebarComponent {
     return builder.build();
   }
 
-  void addSortOptions(
+  private void addSortOptions(
       SidebarInfo.Builder builder, SearchQuery query, UriComponentsBuilder uriBuilder) {
 
     var sortInfoBuilder =
@@ -42,7 +42,7 @@ class SidebarComponent {
     builder.addFilters(sortInfoBuilder.build());
   }
 
-  void addIngredientFilters(
+  private void addIngredientFilters(
       SidebarInfo.Builder builder, SearchQuery query, UriComponentsBuilder uriBuilder) {
     var activeIng = query.numIngredients().orElse(unselectedRange);
 
@@ -56,7 +56,7 @@ class SidebarComponent {
     builder.addFilters(ingredientsFilterInfoBuilder.build());
   }
 
-  void addTotalTimeFilters(
+  private void addTotalTimeFilters(
       SidebarInfo.Builder builder, SearchQuery query, UriComponentsBuilder uriBuilder) {
     var activeTT = query.totalTime().orElse(unselectedRange);
     var timeFilterInfoBuilder = new FilterInfo.Builder().showCounts(false).name(TIME_INFO_NAME);
@@ -68,7 +68,7 @@ class SidebarComponent {
     builder.addFilters(timeFilterInfoBuilder.build());
   }
 
-  void addNutritionFilters(
+  private void addNutritionFilters(
       SidebarInfo.Builder builder, SearchQuery query, UriComponentsBuilder uriBuilder) {
     var activeKcal = query.calories().orElse(unselectedRange);
     var activeFat = query.fatContent().orElse(unselectedRange);
