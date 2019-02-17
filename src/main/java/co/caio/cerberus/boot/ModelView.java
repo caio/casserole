@@ -132,7 +132,8 @@ class ModelView {
       List.of(
           new SortOptionSpec("Relevance", SortOrder.RELEVANCE, "relevance"),
           new SortOptionSpec("Fastest to Cook", SortOrder.TOTAL_TIME, "total_time"),
-          new SortOptionSpec("Least Ingredients", SortOrder.NUM_INGREDIENTS, "num_ingredients"));
+          new SortOptionSpec("Least Ingredients", SortOrder.NUM_INGREDIENTS, "num_ingredients"),
+          new SortOptionSpec("Calories", SortOrder.CALORIES, "calories"));
 
   private static final List<RangeOptionSpec> ingredientFilterOptions =
       List.of(

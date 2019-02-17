@@ -76,6 +76,8 @@ class SearchParameterParser {
         return SortOrder.RELEVANCE;
       case "num_ingredients":
         return SortOrder.NUM_INGREDIENTS;
+      case "calories":
+        return SortOrder.CALORIES;
     }
     throw new SearchParameterException("Invalid sort order: " + order);
   }
