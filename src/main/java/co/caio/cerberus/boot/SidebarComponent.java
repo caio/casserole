@@ -70,8 +70,6 @@ class SidebarComponent {
 
   void addNutritionFilters(
       SidebarInfo.Builder builder, SearchQuery query, UriComponentsBuilder uriBuilder) {
-    // TODO We use mixed queryValues in this filter, make sure we're
-    //      not poisoning the urls
     var activeKcal = query.calories().orElse(unselectedRange);
     var activeFat = query.fatContent().orElse(unselectedRange);
     var activeCarbs = query.carbohydrateContent().orElse(unselectedRange);
@@ -79,16 +77,18 @@ class SidebarComponent {
     var nutritionFilterInfoBuilder =
         new FilterInfo.Builder().showCounts(false).name(NUTRITION_INFO_NAME);
 
+    var otherUriBuilder = uriBuilder.cloneBuilder();
     for (var spec : caloriesFilterOptions) {
-      nutritionFilterInfoBuilder.addOptions(spec.buildOption(uriBuilder, activeKcal));
+      nutritionFilterInfoBuilder.addOptions(spec.buildOption(otherUriBuilder, activeKcal));
     }
 
-    uriBuilder = uriBuilder.cloneBuilder();
+    otherUriBuilder = uriBuilder.cloneBuilder();
     for (var spec : fatFilterOptions) {
-      nutritionFilterInfoBuilder.addOptions(spec.buildOption(uriBuilder, activeFat));
+      nutritionFilterInfoBuilder.addOptions(spec.buildOption(otherUriBuilder, activeFat));
     }
 
-    uriBuilder = uriBuilder.cloneBuilder();
+    // NOTE that this uses uriBuilder directly instead of a clone to save a copy
+    //      if more options are added this will need to be adjusted
     for (var spec : carbsFilterOptions) {
       nutritionFilterInfoBuilder.addOptions(spec.buildOption(uriBuilder, activeCarbs));
     }

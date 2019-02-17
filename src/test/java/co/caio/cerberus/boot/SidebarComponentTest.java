@@ -39,4 +39,32 @@ class SidebarComponentTest {
     assertFalse(sorts.isRemovable());
     assertFalse(sorts.showCounts());
   }
+
+  @Test
+  void nutritionFilterDoesNotPoisonURIs() {
+    var sbb = new SidebarInfo.Builder();
+    var query = new SearchQuery.Builder().fulltext("pecan").build();
+
+    sidebarComponent.addNutritionFilters(sbb, query, uriBuilder);
+
+    var sidebar = sbb.build();
+
+    var nutritionFilters =
+        sidebar
+            .filters()
+            .stream()
+            .filter(fi -> fi.name().equals(SidebarComponent.NUTRITION_INFO_NAME))
+            .findFirst()
+            .orElseThrow();
+
+    // Generated uris should only have one query parameter
+    nutritionFilters
+        .options()
+        .forEach(
+            fo ->
+                assertEquals(
+                    1,
+                    UriComponentsBuilder.fromUriString(fo.href()).build().getQueryParams().size(),
+                    fo.toString()));
+  }
 }
