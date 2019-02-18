@@ -3,7 +3,6 @@ package co.caio.cerberus.boot;
 import co.caio.cerberus.db.RecipeMetadata;
 import co.caio.cerberus.db.RecipeMetadataDatabase;
 import co.caio.cerberus.model.SearchQuery;
-import co.caio.cerberus.model.SearchQuery.RangedSpec;
 import co.caio.cerberus.model.SearchResult;
 import co.caio.cerberus.model.SearchResultRecipe;
 import co.caio.tablier.model.ErrorInfo;
@@ -20,12 +19,14 @@ import co.caio.tablier.view.ZeroResults;
 import com.fizzed.rocker.RockerModel;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
+import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
 
 @Component
@@ -48,7 +49,6 @@ class ModelView {
   private static final PageInfo defaultErrorPage =
       new PageInfo.Builder().title(ERROR_PAGE_TITLE).build();
   private static final String DEFAULT_UNKNOWN_ERROR_SUBTITLE = "Unknown Error Cause";
-  private static final RangedSpec unselectedRange = RangedSpec.of(0, 0);
 
   private final int pageSize;
   private final RecipeMetadataDatabase db;
@@ -72,6 +72,8 @@ class ModelView {
     }
   }
 
+  static final String GO_SLUG_ID_PATH = "/go/{slug}/{recipeId}";
+
   RockerModel renderSearch(
       SearchQuery query, SearchResult result, UriComponentsBuilder uriBuilder) {
 
@@ -86,13 +88,14 @@ class ModelView {
       boolean isLastPage = query.offset() + pageSize >= result.totalHits();
       int currentPage = (query.offset() / pageSize) + 1;
 
+      var recipeGoUriComponents =
+          uriBuilder.cloneBuilder().replacePath(GO_SLUG_ID_PATH).encode().build();
+
       var searchBuilder =
           new SearchResultsInfo.Builder()
               .paginationStart(query.offset() + 1)
               .paginationEnd(result.recipes().size() + query.offset())
               .numMatching(result.totalHits());
-
-      uriBuilder.fragment("results");
 
       if (!isLastPage) {
         searchBuilder.nextPageHref(
@@ -104,7 +107,7 @@ class ModelView {
             uriBuilder.replaceQueryParam("page", currentPage - 1).build().toUriString());
       }
 
-      searchBuilder.recipes(renderRecipes(result.recipes()));
+      searchBuilder.recipes(renderRecipes(result.recipes(), recipeGoUriComponents));
 
       // Sidebar links always lead to the first page
       uriBuilder.replaceQueryParam("page");
@@ -132,11 +135,12 @@ class ModelView {
             .count();
   }
 
-  private Iterable<RecipeInfo> renderRecipes(List<SearchResultRecipe> recipes) {
+  private Iterable<RecipeInfo> renderRecipes(
+      List<SearchResultRecipe> recipes, UriComponents uriComponents) {
     var recipeIds = recipes.stream().map(SearchResultRecipe::recipeId).collect(Collectors.toList());
     return db.findAllById(recipeIds)
         .stream()
-        .map(RecipeMetadataRecipeInfoAdapter::new)
+        .map(r -> new RecipeMetadataRecipeInfoAdapter(r, uriComponents))
         .collect(Collectors.toList());
   }
 
@@ -162,21 +166,27 @@ class ModelView {
     return recipe;
   }
 
-  RockerModel renderSingleRecipe(long recipeId, String slug) {
+  RockerModel renderSingleRecipe(long recipeId, String slug, UriComponentsBuilder builder) {
     var recipe = fetchRecipe(recipeId, slug);
 
     return Recipe.template(
         defaultSite,
         new PageInfo.Builder().title(recipe.getName()).build(),
         defaultSearchForm,
-        new RecipeMetadataRecipeInfoAdapter(recipe));
+        new RecipeMetadataRecipeInfoAdapter(
+            recipe, builder.replacePath(GO_SLUG_ID_PATH).encode().build()));
   }
 
   static class RecipeMetadataRecipeInfoAdapter implements RecipeInfo {
     private final RecipeMetadata metadata;
+    private final String goUrl;
 
-    RecipeMetadataRecipeInfoAdapter(RecipeMetadata metadata) {
+    RecipeMetadataRecipeInfoAdapter(RecipeMetadata metadata, UriComponents uriComponents) {
       this.metadata = metadata;
+      this.goUrl =
+          uriComponents
+              .expand(Map.of("slug", metadata.getSlug(), "recipeId", metadata.getRecipeId()))
+              .toUriString();
     }
 
     @Override
@@ -190,13 +200,13 @@ class ModelView {
     }
 
     @Override
-    public String crawlUrl() {
-      return metadata.getCrawlUrl();
+    public String goUrl() {
+      return goUrl;
     }
 
     @Override
-    public String slug() {
-      return String.format("%s/%d", metadata.getSlug(), metadata.getRecipeId());
+    public String infoUrl() {
+      return goUrl.replace("/go/", "/recipe/");
     }
 
     @Override

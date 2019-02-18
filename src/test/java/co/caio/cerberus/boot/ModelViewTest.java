@@ -138,7 +138,8 @@ class ModelViewTest {
 
     assertTrue(doc.title().startsWith(ModelView.SEARCH_PAGE_TITLE));
 
-    assertTrue(doc.selectFirst("nav.pagination a.pagination-previous").attr("href").contains("page=1"));
+    assertTrue(
+        doc.selectFirst("nav.pagination a.pagination-previous").attr("href").contains("page=1"));
     assertTrue(doc.selectFirst("nav.pagination a.pagination-next").attr("href").contains("page=3"));
   }
 
@@ -158,7 +159,8 @@ class ModelViewTest {
 
     assertTrue(doc.title().startsWith(ModelView.SEARCH_PAGE_TITLE));
 
-    assertTrue(doc.selectFirst("nav.pagination a.pagination-previous").attr("href").contains("page=1"));
+    assertTrue(
+        doc.selectFirst("nav.pagination a.pagination-previous").attr("href").contains("page=1"));
     assertTrue(doc.selectFirst("nav.pagination a.pagination-next").attr("href").isEmpty());
   }
 
@@ -204,19 +206,26 @@ class ModelViewTest {
     var recipe = Util.getSampleRecipes().limit(1).findFirst().orElseThrow();
     assertThrows(
         RecipeNotFoundError.class,
-        () -> modelView.renderSingleRecipe(recipe.recipeId(), "incorrect slug"));
+        () ->
+            modelView.renderSingleRecipe(
+                recipe.recipeId(), "incorrect slug", UriComponentsBuilder.newInstance()));
   }
 
   @Test
   void incorrectIdYieldsNotFound() {
     var recipe = Util.getSampleRecipes().limit(1).findFirst().orElseThrow();
-    assertThrows(RecipeNotFoundError.class, () -> modelView.renderSingleRecipe(213, recipe.slug()));
+    assertThrows(
+        RecipeNotFoundError.class,
+        () -> modelView.renderSingleRecipe(213, recipe.slug(), UriComponentsBuilder.newInstance()));
   }
 
   @Test
   void renderSingleRecipe() {
     var recipe = Util.getSampleRecipes().limit(1).findFirst().orElseThrow();
-    var doc = parseOutput(modelView.renderSingleRecipe(recipe.recipeId(), recipe.slug()));
+    var doc =
+        parseOutput(
+            modelView.renderSingleRecipe(
+                recipe.recipeId(), recipe.slug(), UriComponentsBuilder.newInstance()));
     assertTrue(doc.title().startsWith(recipe.name()));
   }
 }

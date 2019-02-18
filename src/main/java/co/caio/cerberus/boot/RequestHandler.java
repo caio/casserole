@@ -64,7 +64,10 @@ public class RequestHandler {
     var recipeId = Long.parseLong(request.pathVariable("recipeId"));
     return ServerResponse.ok()
         .contentType(MediaType.TEXT_HTML)
-        .body(BodyInserters.fromObject(modelView.renderSingleRecipe(recipeId, slug)));
+        .body(
+            BodyInserters.fromObject(
+                modelView.renderSingleRecipe(
+                    recipeId, slug, UriComponentsBuilder.fromUri(request.uri()))));
   }
 
   public Mono<ServerResponse> go(ServerRequest request) {
