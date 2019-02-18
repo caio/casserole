@@ -101,8 +101,8 @@ class ModelViewTest {
 
     assertTrue(doc.title().startsWith(ModelView.SEARCH_PAGE_TITLE));
 
-    assertNotNull(doc.selectFirst("nav.pagination a.pagination-previous[disabled]"));
-    assertNotNull(doc.selectFirst("nav.pagination a.pagination-next[disabled]"));
+    assertTrue(doc.selectFirst("nav.pagination a.pagination-previous").attr("href").isEmpty());
+    assertTrue(doc.selectFirst("nav.pagination a.pagination-next").attr("href").isEmpty());
   }
 
   @Test
