@@ -1,5 +1,7 @@
 package co.caio.cerberus.boot;
 
+import static org.springframework.web.reactive.function.server.RouterFunctions.route;
+
 import co.caio.cerberus.db.ChronicleRecipeMetadataDatabase;
 import co.caio.cerberus.db.RecipeMetadataDatabase;
 import co.caio.cerberus.search.Searcher;
@@ -11,6 +13,8 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.web.reactive.function.server.RouterFunction;
+import org.springframework.web.reactive.function.server.ServerResponse;
 
 @SpringBootApplication
 @EnableConfigurationProperties
@@ -24,6 +28,15 @@ public class BootApplication {
 
   public static void main(String[] args) {
     SpringApplication.run(BootApplication.class, args);
+  }
+
+  @Bean
+  public RouterFunction<ServerResponse> router(RequestHandler handler) {
+    return route()
+        .GET("/search", handler::search)
+        .GET("/", handler::index)
+        .GET("/recipe/{slug}/{recipeId}", handler::recipe)
+        .build();
   }
 
   @Bean("metadataDb")

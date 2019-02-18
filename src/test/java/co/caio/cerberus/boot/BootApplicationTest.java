@@ -1,7 +1,6 @@
 package co.caio.cerberus.boot;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 
@@ -19,21 +18,19 @@ import org.junit.jupiter.api.Test;
 import org.mockito.stubbing.Answer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.autoconfigure.mustache.MustacheAutoConfiguration;
-import org.springframework.boot.test.autoconfigure.web.reactive.WebFluxTest;
+import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Primary;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
 
-@WebFluxTest(WebController.class)
-@Import(MustacheAutoConfiguration.class)
-class WebControllerTest {
-
+@SpringBootTest
+@AutoConfigureWebTestClient
+class BootApplicationTest {
   @Autowired WebTestClient testClient;
   @Autowired CircuitBreaker breaker;
 
@@ -55,11 +52,6 @@ class WebControllerTest {
     @Bean("searchPageSize")
     int pageSize() {
       return 10;
-    }
-
-    @Bean
-    SearchParameterParser parser() {
-      return new SearchParameterParser(pageSize());
     }
 
     @Bean
