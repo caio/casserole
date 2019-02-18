@@ -2,6 +2,7 @@ package co.caio.cerberus.boot;
 
 import co.caio.cerberus.search.Searcher;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
+import java.net.URI;
 import java.time.Duration;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
@@ -64,5 +65,12 @@ public class RequestHandler {
     return ServerResponse.ok()
         .contentType(MediaType.TEXT_HTML)
         .body(BodyInserters.fromObject(modelView.renderSingleRecipe(recipeId, slug)));
+  }
+
+  public Mono<ServerResponse> go(ServerRequest request) {
+    var slug = request.pathVariable("slug");
+    var recipeId = Long.parseLong(request.pathVariable("recipeId"));
+    var recipe = modelView.fetchRecipe(recipeId, slug);
+    return ServerResponse.permanentRedirect(URI.create(recipe.getCrawlUrl())).build();
   }
 }

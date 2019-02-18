@@ -36,6 +36,7 @@ public class BootApplication {
         .GET("/search", handler::search)
         .GET("/", handler::index)
         .GET("/recipe/{slug}/{recipeId}", handler::recipe)
+        .GET("/go/{slug}/{recipeId}", handler::go)
         .build();
   }
 

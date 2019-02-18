@@ -151,12 +151,19 @@ class ModelView {
             .build());
   }
 
-  RockerModel renderSingleRecipe(long recipeId, String slug) {
+  // XXX Move to a better place maybe
+  RecipeMetadata fetchRecipe(long recipeId, String slug) {
     var recipe = db.findById(recipeId).orElseThrow(RecipeNotFoundError::new);
 
     if (!slug.equals(recipe.getSlug())) {
       throw new RecipeNotFoundError();
     }
+
+    return recipe;
+  }
+
+  RockerModel renderSingleRecipe(long recipeId, String slug) {
+    var recipe = fetchRecipe(recipeId, slug);
 
     return Recipe.template(
         defaultSite,

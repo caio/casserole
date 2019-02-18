@@ -4,7 +4,9 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 
+import co.caio.cerberus.Util;
 import co.caio.cerberus.db.HashMapRecipeMetadataDatabase;
+import co.caio.cerberus.db.RecipeMetadata;
 import co.caio.cerberus.db.RecipeMetadataDatabase;
 import co.caio.cerberus.model.SearchResult;
 import co.caio.cerberus.search.Searcher;
@@ -62,7 +64,9 @@ class BootApplicationTest {
 
     @Bean("metadataDb")
     RecipeMetadataDatabase getMetadataDb() {
-      return new HashMapRecipeMetadataDatabase();
+      var db = new HashMapRecipeMetadataDatabase();
+      db.saveAll(List.of(RecipeMetadata.fromRecipe(Util.getBasicRecipe())));
+      return db;
     }
 
     @Bean
@@ -152,6 +156,25 @@ class BootApplicationTest {
     // And the search controls are disabled
     assertNotNull(doc.select("form input[disabled]").first());
     assertNotNull(doc.select("form button[disabled]").first());
+  }
+
+  @Test
+  void goActionRedirectsProperly() {
+    var recipe = Util.getBasicRecipe();
+    var goUri = String.format("/go/%s/%d", recipe.slug(), recipe.recipeId());
+    testClient
+        .get()
+        .uri(goUri)
+        .exchange()
+        .expectStatus()
+        .isPermanentRedirect()
+        .expectHeader()
+        .valueMatches("Location", recipe.crawlUrl());
+  }
+
+  @Test
+  void goActionInvalidUriYieldsNotFound() {
+    testClient.get().uri("/go/bad-slug/42").exchange().expectStatus().isNotFound();
   }
 
   private Document parseIndexBody() {
