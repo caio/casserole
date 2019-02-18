@@ -119,8 +119,8 @@ class ModelViewTest {
 
     assertTrue(doc.title().startsWith(ModelView.SEARCH_PAGE_TITLE));
 
-    assertNotNull(doc.selectFirst("nav.pagination a.pagination-previous[disabled]"));
-    assertNotNull(doc.selectFirst("nav.pagination a.pagination-next[href$='page=2#results']"));
+    assertTrue(doc.selectFirst("nav.pagination a.pagination-previous").attr("href").isEmpty());
+    assertTrue(doc.selectFirst("nav.pagination a.pagination-next").attr("href").contains("page=2"));
   }
 
   @Test
@@ -138,8 +138,8 @@ class ModelViewTest {
 
     assertTrue(doc.title().startsWith(ModelView.SEARCH_PAGE_TITLE));
 
-    assertNotNull(doc.selectFirst("nav.pagination a.pagination-previous[href$='page=1#results']"));
-    assertNotNull(doc.selectFirst("nav.pagination a.pagination-next[href$='page=3#results']"));
+    assertTrue(doc.selectFirst("nav.pagination a.pagination-previous").attr("href").contains("page=1"));
+    assertTrue(doc.selectFirst("nav.pagination a.pagination-next").attr("href").contains("page=3"));
   }
 
   @Test
@@ -158,8 +158,8 @@ class ModelViewTest {
 
     assertTrue(doc.title().startsWith(ModelView.SEARCH_PAGE_TITLE));
 
-    assertNotNull(doc.selectFirst("nav.pagination a.pagination-previous[href$='page=1#results']"));
-    assertNotNull(doc.selectFirst("nav.pagination a.pagination-next[disabled]"));
+    assertTrue(doc.selectFirst("nav.pagination a.pagination-previous").attr("href").contains("page=1"));
+    assertTrue(doc.selectFirst("nav.pagination a.pagination-next").attr("href").isEmpty());
   }
 
   @Test
