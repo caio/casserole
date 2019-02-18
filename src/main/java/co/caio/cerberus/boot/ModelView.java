@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -118,16 +119,15 @@ class ModelView {
   int deriveAppliedFilters(SearchQuery query) {
     // XXX This is very error prone as I'll need to keep in sync with
     //     the SearchQuery evolution manually. It could be computed
-    //     during the build phase for better speed AND correcness,
+    //     during the build phase for better speed AND correctness,
     //     but right now it's too annoying to do it with immutables
     return (int)
-        List.of(
+        Stream.of(
                 query.numIngredients(),
                 query.totalTime(),
                 query.calories(),
                 query.fatContent(),
                 query.carbohydrateContent())
-            .stream()
             .flatMap(Optional::stream)
             .count();
   }
