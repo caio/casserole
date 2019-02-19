@@ -7,6 +7,8 @@ import io.github.resilience4j.circuitbreaker.CircuitBreakerOpenException;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeoutException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.web.ResourceProperties;
 import org.springframework.boot.autoconfigure.web.reactive.error.AbstractErrorWebExceptionHandler;
 import org.springframework.boot.web.reactive.error.ErrorAttributes;
@@ -28,6 +30,8 @@ import reactor.core.publisher.Mono;
 @Component
 @Order(-2)
 public class ExceptionHandler extends AbstractErrorWebExceptionHandler {
+
+  private static final Logger logger = LoggerFactory.getLogger("cerberus.exception");
 
   private final ModelView modelView;
 
@@ -57,6 +61,10 @@ public class ExceptionHandler extends AbstractErrorWebExceptionHandler {
 
     var spec = errorSpecMap.getOrDefault(exception.getClass(), DEFAULT_ERROR_SPEC);
 
+    if (spec.getStatus().is5xxServerError()) {
+      logger.error("Exception caught handling request", exception);
+    }
+
     return ServerResponse.status(spec.status)
         .body(
             BodyInserters.fromObject(
@@ -66,6 +74,11 @@ public class ExceptionHandler extends AbstractErrorWebExceptionHandler {
 
   private Mono<ServerResponse> handleResponseStatusException(ResponseStatusException ex) {
     var status = ex.getStatus();
+
+    if (status.is5xxServerError()) {
+      logger.error("Exception caught handling request", ex);
+    }
+
     var reason = ex.getReason();
     return ServerResponse.status(status)
         .body(
