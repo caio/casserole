@@ -21,6 +21,7 @@ import org.springframework.web.reactive.function.server.RouterFunction;
 import org.springframework.web.reactive.function.server.RouterFunctions;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.server.ServerWebInputException;
 import reactor.core.publisher.Mono;
 
@@ -49,6 +50,11 @@ public class ExceptionHandler extends AbstractErrorWebExceptionHandler {
   private Mono<ServerResponse> renderError(ServerRequest request) {
 
     var exception = getError(request);
+
+    if (exception instanceof ResponseStatusException) {
+      return handleResponseStatusException((ResponseStatusException) exception);
+    }
+
     var spec = errorSpecMap.getOrDefault(exception.getClass(), DEFAULT_ERROR_SPEC);
 
     return ServerResponse.status(spec.status)
@@ -56,6 +62,16 @@ public class ExceptionHandler extends AbstractErrorWebExceptionHandler {
             BodyInserters.fromObject(
                 modelView.renderError(
                     spec.getTitle(), spec.getMessage().orElse(exception.getMessage()))));
+  }
+
+  private Mono<ServerResponse> handleResponseStatusException(ResponseStatusException ex) {
+    var status = ex.getStatus();
+    var reason = ex.getReason();
+    return ServerResponse.status(status)
+        .body(
+            BodyInserters.fromObject(
+                modelView.renderError(
+                    status.getReasonPhrase(), reason == null ? ex.getMessage() : reason)));
   }
 
   private static final ErrorSpec DEFAULT_ERROR_SPEC =
