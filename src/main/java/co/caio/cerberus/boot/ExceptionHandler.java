@@ -59,10 +59,11 @@ public class ExceptionHandler extends AbstractErrorWebExceptionHandler {
       return handleResponseStatusException((ResponseStatusException) exception);
     }
 
-    var spec = errorSpecMap.getOrDefault(exception.getClass(), DEFAULT_ERROR_SPEC);
+    var spec = errorSpecMap.get(exception.getClass());
 
-    if (spec.getStatus().is5xxServerError()) {
+    if (spec == null) {
       logger.error("Exception caught handling request", exception);
+      spec = DEFAULT_ERROR_SPEC;
     }
 
     return ServerResponse.status(spec.status)
