@@ -6,11 +6,10 @@ import co.caio.cerberus.model.SearchQuery;
 import co.caio.cerberus.model.SearchResult;
 import co.caio.cerberus.model.SearchResultRecipe;
 import co.caio.tablier.model.ErrorInfo;
-import co.caio.tablier.model.PageInfo;
 import co.caio.tablier.model.RecipeInfo;
-import co.caio.tablier.model.SearchFormInfo;
 import co.caio.tablier.model.SearchResultsInfo;
 import co.caio.tablier.model.SiteInfo;
+import co.caio.tablier.model.SiteInfo.Builder;
 import co.caio.tablier.view.Error;
 import co.caio.tablier.view.Index;
 import co.caio.tablier.view.Recipe;
@@ -36,18 +35,13 @@ class ModelView {
   static final String SEARCH_PAGE_TITLE = "Search Results";
   static final String ERROR_PAGE_TITLE = "An Error Has Occurred";
 
-  private static final SiteInfo defaultSite = new SiteInfo.Builder().build();
-  private static final SiteInfo unstableSite = new SiteInfo.Builder().isUnstable(true).build();
-  private static final PageInfo defaultIndexPage =
-      new PageInfo.Builder().title(INDEX_PAGE_TITLE).build();
-  private static final SearchFormInfo autoFocusSearchForm =
-      new SearchFormInfo.Builder().isAutoFocus(true).build();
-  private static final SearchFormInfo defaultSearchForm =
-      new SearchFormInfo.Builder().isAutoFocus(false).build();
-  private static final PageInfo defaultSearchPage =
-      new PageInfo.Builder().title(SEARCH_PAGE_TITLE).build();
-  private static final PageInfo defaultErrorPage =
-      new PageInfo.Builder().title(ERROR_PAGE_TITLE).build();
+  private static final SiteInfo DEFAULT_UNSTABLE_INDEX_SITE =
+      new Builder().title(INDEX_PAGE_TITLE).isUnstable(true).build();
+  private static final SiteInfo DEFAULT_INDEX_SITE =
+      new Builder().title(INDEX_PAGE_TITLE).searchIsAutoFocus(true).build();
+  private static final SiteInfo DEFAULT_ERROR_SITE =
+      new SiteInfo.Builder().title(ERROR_PAGE_TITLE).searchIsAutoFocus(true).build();
+
   private static final String DEFAULT_UNKNOWN_ERROR_SUBTITLE = "Unknown Error Cause";
 
   private final int pageSize;
@@ -66,22 +60,26 @@ class ModelView {
 
   RockerModel renderIndex() {
     if (breaker.isCallPermitted()) {
-      return Index.template(defaultSite, defaultIndexPage, autoFocusSearchForm);
+      return Index.template(DEFAULT_INDEX_SITE);
     } else {
-      return Index.template(unstableSite, defaultIndexPage, defaultSearchForm);
+      return Index.template(DEFAULT_UNSTABLE_INDEX_SITE);
     }
   }
 
-  static final String GO_SLUG_ID_PATH = "/go/{slug}/{recipeId}";
+  private static final String GO_SLUG_ID_PATH = "/go/{slug}/{recipeId}";
 
   RockerModel renderSearch(
       SearchQuery query, SearchResult result, UriComponentsBuilder uriBuilder) {
 
-    var searchForm =
-        new SearchFormInfo.Builder().isAutoFocus(false).value(query.fulltext().orElse("")).build();
+    var siteInfo =
+        new SiteInfo.Builder()
+            .title(SEARCH_PAGE_TITLE)
+            .searchIsAutoFocus(false)
+            .searchValue(query.fulltext().orElse(""))
+            .build();
 
     if (result.totalHits() == 0) {
-      return ZeroResults.template(defaultSite, defaultSearchPage, searchForm);
+      return ZeroResults.template(siteInfo);
     } else if (query.offset() >= result.totalHits()) {
       throw new OverPaginationError("No more results to show for this search");
     } else {
@@ -115,7 +113,7 @@ class ModelView {
 
       searchBuilder.numAppliedFilters(deriveAppliedFilters(query));
 
-      return Search.template(defaultSite, defaultSearchPage, searchForm, searchBuilder.build());
+      return Search.template(siteInfo, searchBuilder.build());
     }
   }
 
@@ -138,17 +136,14 @@ class ModelView {
   private Iterable<RecipeInfo> renderRecipes(
       List<SearchResultRecipe> recipes, UriComponents uriComponents) {
     var recipeIds = recipes.stream().map(SearchResultRecipe::recipeId).collect(Collectors.toList());
-    return db.findAllById(recipeIds)
-        .stream()
+    return db.findAllById(recipeIds).stream()
         .map(r -> new RecipeMetadataRecipeInfoAdapter(r, uriComponents))
         .collect(Collectors.toList());
   }
 
   RockerModel renderError(String errorTitle, String errorSubtitle) {
     return Error.template(
-        defaultSite,
-        defaultErrorPage,
-        defaultSearchForm,
+        DEFAULT_ERROR_SITE,
         new ErrorInfo.Builder()
             .subtitle(errorSubtitle == null ? DEFAULT_UNKNOWN_ERROR_SUBTITLE : errorSubtitle)
             .title(errorTitle)
@@ -170,9 +165,7 @@ class ModelView {
     var recipe = fetchRecipe(recipeId, slug);
 
     return Recipe.template(
-        defaultSite,
-        new PageInfo.Builder().title(recipe.getName()).build(),
-        defaultSearchForm,
+        new SiteInfo.Builder().title(recipe.getName()).searchIsAutoFocus(false).build(),
         new RecipeMetadataRecipeInfoAdapter(
             recipe, builder.replacePath(GO_SLUG_ID_PATH).encode().build()));
   }
