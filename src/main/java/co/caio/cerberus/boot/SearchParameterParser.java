@@ -45,7 +45,6 @@ class SearchParameterParser {
               builder.carbohydrateContent(parseRange(value));
               break;
             case "diet":
-              // FIXME validate
               builder.addMatchDiet(value);
               break;
             case "page":
