@@ -84,7 +84,7 @@ class SidebarComponentTest {
     assertEquals(1, activeTimes.size());
     assertTrue(activeTimes.get(0).name().endsWith("15 to 30 minutes"));
 
-    var dietInfo = findFilterInfo(sidebar,SidebarComponent.DIETS_INFO_NAME);
+    var dietInfo = findFilterInfo(sidebar, SidebarComponent.DIETS_INFO_NAME);
     var activeDiets = findActive(dietInfo);
     assertEquals(1, activeDiets.size());
     assertEquals("Keto", activeDiets.get(0).name());

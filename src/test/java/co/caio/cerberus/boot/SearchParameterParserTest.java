@@ -43,9 +43,8 @@ class SearchParameterParserTest {
     assertEquals(
         parser.buildQuery(input), builder.carbohydrateContent(RangedSpec.of(0, 30)).build());
 
-    input.put("diet","keto");
-    assertEquals(
-        parser.buildQuery(input), builder.addMatchDiet("keto").build());
+    input.put("diet", "keto");
+    assertEquals(parser.buildQuery(input), builder.addMatchDiet("keto").build());
 
     input.put("page", "1");
     assertEquals(parser.buildQuery(input), builder.build());

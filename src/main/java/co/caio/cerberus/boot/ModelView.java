@@ -136,7 +136,8 @@ class ModelView {
   private Iterable<RecipeInfo> renderRecipes(
       List<SearchResultRecipe> recipes, UriComponents uriComponents) {
     var recipeIds = recipes.stream().map(SearchResultRecipe::recipeId).collect(Collectors.toList());
-    return db.findAllById(recipeIds).stream()
+    return db.findAllById(recipeIds)
+        .stream()
         .map(r -> new RecipeMetadataRecipeInfoAdapter(r, uriComponents))
         .collect(Collectors.toList());
   }
