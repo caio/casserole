@@ -47,18 +47,16 @@ class SidebarComponent {
 
   private void addDietFilters(
       SidebarInfo.Builder builder, SearchQuery query, UriComponentsBuilder uriBuilder) {
-    // FIXME the query API as-is allows multiple selection, but the
-    //       sidebar doesn't. I want the sidebar behavior, so figure
-    //       out a way to guarantee this (or just throw :-))
     var selectedDiets = query.dietThreshold().keySet();
 
-    var dietsFilterInfoBuilder =
-        new FilterInfo.Builder()
-            .showCounts(false)
-            .name(DIETS_INFO_NAME);
+    if (selectedDiets.size() > 1) {
+      throw new IllegalStateException("Don't know how to handle multiple selected diets");
+    }
+
+    var dietsFilterInfoBuilder = new FilterInfo.Builder().showCounts(false).name(DIETS_INFO_NAME);
 
     for (var spec : dietFilterOptions) {
-      dietsFilterInfoBuilder.addOptions(spec.buildOption(uriBuilder,selectedDiets));
+      dietsFilterInfoBuilder.addOptions(spec.buildOption(uriBuilder, selectedDiets));
     }
 
     builder.addFilters(dietsFilterInfoBuilder.build());

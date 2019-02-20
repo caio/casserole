@@ -95,6 +95,17 @@ class SidebarComponentTest {
   }
 
   @Test
+  void cantRenderMultipleSelectedDiets() {
+    var query =
+        new SearchQuery.Builder()
+            .fulltext("ignored")
+            .addMatchDiet("keto")
+            .addMatchDiet("paleo")
+            .build();
+    assertThrows(IllegalStateException.class, () -> sidebarComponent.build(query, uriBuilder));
+  }
+
+  @Test
   void activeFilterHrefRemovesFilterParam() {
     var query =
         new SearchQuery.Builder().fulltext("ignored").totalTime(RangedSpec.of(30, 60)).build();
