@@ -45,7 +45,11 @@ class SearchParameterParser {
               builder.carbohydrateContent(parseRange(value));
               break;
             case "diet":
-              builder.addMatchDiet(value);
+              var threshold = Float.parseFloat(params.getOrDefault("science", "1"));
+              builder.putDietThreshold(value, threshold);
+              break;
+            case "science":
+              // Ignored: handled on "diet" right above
               break;
             case "page":
               // page starts from 1, not 0

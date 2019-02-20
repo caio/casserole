@@ -46,6 +46,9 @@ class SearchParameterParserTest {
     input.put("diet", "keto");
     assertEquals(parser.buildQuery(input), builder.addMatchDiet("keto").build());
 
+    input.put("science", "0.75");
+    assertEquals(parser.buildQuery(input), builder.putDietThreshold("keto", 0.75f).build());
+
     input.put("page", "1");
     assertEquals(parser.buildQuery(input), builder.build());
 
