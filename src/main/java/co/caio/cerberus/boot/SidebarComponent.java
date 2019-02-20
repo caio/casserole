@@ -7,11 +7,13 @@ import co.caio.tablier.model.FilterInfo;
 import co.caio.tablier.model.FilterInfo.FilterOption;
 import co.caio.tablier.model.SidebarInfo;
 import java.util.List;
+import java.util.Set;
 import org.springframework.web.util.UriComponentsBuilder;
 
 class SidebarComponent {
 
   static final String SORT_INFO_NAME = "Sort recipes by";
+  static final String DIETS_INFO_NAME = "Restrict by Diet";
   static final String INGREDIENTS_INFO_NAME = "Limit Ingredients";
   static final String TIME_INFO_NAME = "Limit Total Time";
   static final String NUTRITION_INFO_NAME = "Limit Nutrition (per serving)";
@@ -22,6 +24,7 @@ class SidebarComponent {
     var builder = new SidebarInfo.Builder();
 
     addSortOptions(builder, query, uriBuilder.cloneBuilder());
+    addDietFilters(builder, query, uriBuilder.cloneBuilder());
     addIngredientFilters(builder, query, uriBuilder.cloneBuilder());
     addTotalTimeFilters(builder, query, uriBuilder.cloneBuilder());
     addNutritionFilters(builder, query, uriBuilder.cloneBuilder());
@@ -40,6 +43,25 @@ class SidebarComponent {
     }
 
     builder.addFilters(sortInfoBuilder.build());
+  }
+
+  private void addDietFilters(
+      SidebarInfo.Builder builder, SearchQuery query, UriComponentsBuilder uriBuilder) {
+    // FIXME the query API as-is allows multiple selection, but the
+    //       sidebar doesn't. I want the sidebar behavior, so figure
+    //       out a way to guarantee this (or just throw :-))
+    var selectedDiets = query.dietThreshold().keySet();
+
+    var dietsFilterInfoBuilder =
+        new FilterInfo.Builder()
+            .showCounts(false)
+            .name(DIETS_INFO_NAME);
+
+    for (var spec : dietFilterOptions) {
+      dietsFilterInfoBuilder.addOptions(spec.buildOption(uriBuilder,selectedDiets));
+    }
+
+    builder.addFilters(dietsFilterInfoBuilder.build());
   }
 
   private void addIngredientFilters(
@@ -119,6 +141,34 @@ class SidebarComponent {
     }
   }
 
+  static class StringOptionSpec {
+
+    private final String name;
+    private final String queryName;
+    private final String queryValue;
+
+    StringOptionSpec(String name, String queryName, String queryValue) {
+      this.name = name;
+      this.queryName = queryName;
+      this.queryValue = queryValue;
+    }
+
+    FilterOption buildOption(UriComponentsBuilder uriBuilder, Set<String> selected) {
+      var isActive = selected.contains(queryValue);
+
+      var href =
+          isActive
+              ? uriBuilder.replaceQueryParam(queryName)
+              : uriBuilder.replaceQueryParam(queryName, queryValue);
+
+      return new FilterInfo.FilterOption.Builder()
+          .name(name)
+          .href(href.build().toUriString())
+          .isActive(isActive)
+          .build();
+    }
+  }
+
   static class RangeOptionSpec {
 
     private final String name;
@@ -157,6 +207,13 @@ class SidebarComponent {
           new SortOptionSpec("Fastest to Cook", SortOrder.TOTAL_TIME, "total_time"),
           new SortOptionSpec("Least Ingredients", SortOrder.NUM_INGREDIENTS, "num_ingredients"),
           new SortOptionSpec("Calories", SortOrder.CALORIES, "calories"));
+
+  private static final List<StringOptionSpec> dietFilterOptions =
+      List.of(
+          new StringOptionSpec("Low Carb", "diet", "lowcarb"),
+          new StringOptionSpec("Vegan", "diet", "vegan"),
+          new StringOptionSpec("Keto", "diet", "keto"),
+          new StringOptionSpec("Paleo", "diet", "paleo"));
 
   private static final List<RangeOptionSpec> ingredientFilterOptions =
       List.of(

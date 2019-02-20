@@ -44,6 +44,10 @@ class SearchParameterParser {
             case "n_c":
               builder.carbohydrateContent(parseRange(value));
               break;
+            case "diet":
+              // FIXME validate
+              builder.addMatchDiet(value);
+              break;
             case "page":
               // page starts from 1, not 0
               builder.offset((parseUnsignedInt(value) - 1) * pageSize);
