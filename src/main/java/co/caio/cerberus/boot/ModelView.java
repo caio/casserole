@@ -14,7 +14,6 @@ import co.caio.tablier.view.Error;
 import co.caio.tablier.view.Index;
 import co.caio.tablier.view.Recipe;
 import co.caio.tablier.view.Search;
-import co.caio.tablier.view.ZeroResults;
 import com.fizzed.rocker.RockerModel;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import java.util.List;
@@ -78,43 +77,41 @@ class ModelView {
             .searchValue(query.fulltext().orElse(""))
             .build();
 
-    if (result.totalHits() == 0) {
-      return ZeroResults.template(siteInfo);
-    } else if (query.offset() >= result.totalHits()) {
+    if (query.offset() >= result.totalHits() && result.totalHits() > 0) {
       throw new OverPaginationError("No more results to show for this search");
-    } else {
-      boolean isLastPage = query.offset() + pageSize >= result.totalHits();
-      int currentPage = (query.offset() / pageSize) + 1;
-
-      var recipeGoUriComponents =
-          uriBuilder.cloneBuilder().replacePath(GO_SLUG_ID_PATH).encode().build();
-
-      var searchBuilder =
-          new SearchResultsInfo.Builder()
-              .paginationStart(query.offset() + 1)
-              .paginationEnd(result.recipes().size() + query.offset())
-              .numMatching(result.totalHits());
-
-      if (!isLastPage) {
-        searchBuilder.nextPageHref(
-            uriBuilder.replaceQueryParam("page", currentPage + 1).build().toUriString());
-      }
-
-      if (currentPage != 1) {
-        searchBuilder.previousPageHref(
-            uriBuilder.replaceQueryParam("page", currentPage - 1).build().toUriString());
-      }
-
-      searchBuilder.recipes(renderRecipes(result.recipes(), recipeGoUriComponents));
-
-      // Sidebar links always lead to the first page
-      uriBuilder.replaceQueryParam("page");
-      searchBuilder.sidebar(sidebarComponent.build(query, uriBuilder));
-
-      searchBuilder.numAppliedFilters(deriveAppliedFilters(query));
-
-      return Search.template(siteInfo, searchBuilder.build());
     }
+
+    boolean isLastPage = query.offset() + pageSize >= result.totalHits();
+    int currentPage = (query.offset() / pageSize) + 1;
+
+    var recipeGoUriComponents =
+        uriBuilder.cloneBuilder().replacePath(GO_SLUG_ID_PATH).encode().build();
+
+    var searchBuilder =
+        new SearchResultsInfo.Builder()
+            .paginationStart(query.offset() + 1)
+            .paginationEnd(result.recipes().size() + query.offset())
+            .numMatching(result.totalHits());
+
+    if (!isLastPage) {
+      searchBuilder.nextPageHref(
+          uriBuilder.replaceQueryParam("page", currentPage + 1).build().toUriString());
+    }
+
+    if (currentPage != 1) {
+      searchBuilder.previousPageHref(
+          uriBuilder.replaceQueryParam("page", currentPage - 1).build().toUriString());
+    }
+
+    searchBuilder.recipes(renderRecipes(result.recipes(), recipeGoUriComponents));
+
+    // Sidebar links always lead to the first page
+    uriBuilder.replaceQueryParam("page");
+    searchBuilder.sidebar(sidebarComponent.build(query, uriBuilder));
+
+    searchBuilder.numAppliedFilters(deriveAppliedFilters(query));
+
+    return Search.template(siteInfo, searchBuilder.build());
   }
 
   int deriveAppliedFilters(SearchQuery query) {

@@ -68,8 +68,7 @@ class ModelViewTest {
     var doc = parseOutput(modelView.renderError(errorTitle, errorSubtitle));
 
     assertTrue(doc.title().startsWith(ModelView.ERROR_PAGE_TITLE));
-    assertEquals(errorTitle, doc.selectFirst("section#error.section h1.title").text());
-    assertEquals(errorSubtitle, doc.selectFirst("section#error.section h2.subtitle").text());
+    assertEquals(errorTitle, doc.selectFirst("div.notification.is-danger p strong").text());
   }
 
   @Test
@@ -79,7 +78,10 @@ class ModelViewTest {
 
     var doc = parseOutput(modelView.renderSearch(unusedQuery, result, uriBuilder));
     assertTrue(doc.title().startsWith(ModelView.SEARCH_PAGE_TITLE));
-    assertEquals("Try changing your query", doc.selectFirst("section#results h2.subtitle").text());
+    assertTrue(
+        doc.selectFirst("section#results div.notification.content.is-danger")
+            .text()
+            .contains("Try changing your query"));
   }
 
   @Test
