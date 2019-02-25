@@ -61,7 +61,12 @@ class SearchParameterParser {
               break;
             case "page":
               // page starts from 1, not 0
-              builder.offset((parseUnsignedInt(value) - 1) * pageSize);
+              var pageNumber = parseUnsignedInt(value);
+              if (pageNumber > 30) {
+                throw new SearchParameterException(
+                    "For performance reasons, viewing pages 31+ is not allowed.");
+              }
+              builder.offset((pageNumber - 1) * pageSize);
               break;
             default:
               throw new SearchParameterException("Unknown parameter " + param);

@@ -8,6 +8,7 @@ import co.caio.cerberus.model.SearchQuery.RangedSpec;
 import co.caio.cerberus.model.SearchQuery.SortOrder;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 class SearchParameterParserTest {
@@ -70,6 +71,13 @@ class SearchParameterParserTest {
     assertThrows(
         SearchParameterException.class,
         () -> parser.buildQuery(Collections.singletonMap("ni", "10")));
+  }
+
+  @Test
+  void cantPaginateAfter30() {
+    assertThrows(
+        SearchParameterException.class,
+        () -> parser.buildQuery(Map.of("q", "unused", "page", "31")));
   }
 
   @Test
