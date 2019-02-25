@@ -84,6 +84,7 @@ class BootApplicationTest {
   void badInputTriggersError400() {
     var badQueries =
         List.of(
+            "q=oi", // query length must be > 2
             "q=oil&n=0", // n is >= 1
             "q=oil&n=1.2", // n is not an int
             "q=oil&n=notANumber", // n is >= 1
