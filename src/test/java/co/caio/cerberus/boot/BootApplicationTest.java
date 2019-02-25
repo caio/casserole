@@ -84,11 +84,9 @@ class BootApplicationTest {
   void badInputTriggersError400() {
     var badQueries =
         List.of(
-            "q=oi", // too short
             "q=oil&n=0", // n is >= 1
             "q=oil&n=1.2", // n is not an int
             "q=oil&n=notANumber", // n is >= 1
-            "q=oil&n=1000", // too big
             "q=oil&nf=-1", // negative number
             "q=oil&sort=random", // invalid sort order
             "q=oil&ni=2,1", // invalid range
