@@ -35,8 +35,7 @@ class SidebarComponent {
   private void addSortOptions(
       SidebarInfo.Builder builder, SearchQuery query, UriComponentsBuilder uriBuilder) {
 
-    var sortInfoBuilder =
-        new FilterInfo.Builder().showCounts(false).isRemovable(false).name(SORT_INFO_NAME);
+    var sortInfoBuilder = new FilterInfo.Builder().isRemovable(false).name(SORT_INFO_NAME);
 
     for (SortOptionSpec spec : sortOptions) {
       sortInfoBuilder.addOptions(spec.buildOption(uriBuilder, query.sort()));
@@ -53,7 +52,7 @@ class SidebarComponent {
       throw new IllegalStateException("Don't know how to handle multiple selected diets");
     }
 
-    var dietsFilterInfoBuilder = new FilterInfo.Builder().showCounts(false).name(DIETS_INFO_NAME);
+    var dietsFilterInfoBuilder = new FilterInfo.Builder().name(DIETS_INFO_NAME);
 
     for (var spec : dietFilterOptions) {
       dietsFilterInfoBuilder.addOptions(spec.buildOption(uriBuilder, selectedDiets));
@@ -66,8 +65,7 @@ class SidebarComponent {
       SidebarInfo.Builder builder, SearchQuery query, UriComponentsBuilder uriBuilder) {
     var activeIng = query.numIngredients().orElse(unselectedRange);
 
-    var ingredientsFilterInfoBuilder =
-        new FilterInfo.Builder().showCounts(false).name(INGREDIENTS_INFO_NAME);
+    var ingredientsFilterInfoBuilder = new FilterInfo.Builder().name(INGREDIENTS_INFO_NAME);
 
     for (var spec : ingredientFilterOptions) {
       ingredientsFilterInfoBuilder.addOptions(spec.buildOption(uriBuilder, activeIng));
@@ -79,7 +77,7 @@ class SidebarComponent {
   private void addTotalTimeFilters(
       SidebarInfo.Builder builder, SearchQuery query, UriComponentsBuilder uriBuilder) {
     var activeTT = query.totalTime().orElse(unselectedRange);
-    var timeFilterInfoBuilder = new FilterInfo.Builder().showCounts(false).name(TIME_INFO_NAME);
+    var timeFilterInfoBuilder = new FilterInfo.Builder().name(TIME_INFO_NAME);
 
     for (var spec : totalTimeFilterOptions) {
       timeFilterInfoBuilder.addOptions(spec.buildOption(uriBuilder, activeTT));
@@ -94,8 +92,7 @@ class SidebarComponent {
     var activeFat = query.fatContent().orElse(unselectedRange);
     var activeCarbs = query.carbohydrateContent().orElse(unselectedRange);
 
-    var nutritionFilterInfoBuilder =
-        new FilterInfo.Builder().showCounts(false).name(NUTRITION_INFO_NAME);
+    var nutritionFilterInfoBuilder = new FilterInfo.Builder().name(NUTRITION_INFO_NAME);
 
     var otherUriBuilder = uriBuilder.cloneBuilder();
     for (var spec : caloriesFilterOptions) {
