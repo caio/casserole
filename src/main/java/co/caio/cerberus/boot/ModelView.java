@@ -114,20 +114,21 @@ class ModelView {
     return Search.template(siteInfo, searchBuilder.build());
   }
 
-  int deriveAppliedFilters(SearchQuery query) {
+  static int deriveAppliedFilters(SearchQuery query) {
     // XXX This is very error prone as I'll need to keep in sync with
     //     the SearchQuery evolution manually. It could be computed
     //     during the build phase for better speed AND correctness,
     //     but right now it's too annoying to do it with immutables
     return (int)
-        Stream.of(
-                query.numIngredients(),
-                query.totalTime(),
-                query.calories(),
-                query.fatContent(),
-                query.carbohydrateContent())
-            .flatMap(Optional::stream)
-            .count();
+            Stream.of(
+                    query.numIngredients(),
+                    query.totalTime(),
+                    query.calories(),
+                    query.fatContent(),
+                    query.carbohydrateContent())
+                .flatMap(Optional::stream)
+                .count()
+        + query.dietThreshold().size(); // First bite
   }
 
   private Iterable<RecipeInfo> renderRecipes(
