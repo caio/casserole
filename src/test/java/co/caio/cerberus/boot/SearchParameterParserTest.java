@@ -60,6 +60,19 @@ class SearchParameterParserTest {
   }
 
   @Test
+  void smallOrEmptyQueryThrows() {
+    assertThrows(
+        SearchParameterException.class, () -> parser.buildQuery(Collections.singletonMap("q", "")));
+    assertThrows(
+        SearchParameterException.class,
+        () -> parser.buildQuery(Collections.singletonMap("q", "oi")));
+    // ?ni=10 would be valid if q= wasn't required
+    assertThrows(
+        SearchParameterException.class,
+        () -> parser.buildQuery(Collections.singletonMap("ni", "10")));
+  }
+
+  @Test
   void unknownParameterThrows() {
     assertThrows(
         SearchParameterException.class,
