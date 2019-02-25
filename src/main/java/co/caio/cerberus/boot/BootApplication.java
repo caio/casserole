@@ -5,6 +5,7 @@ import static org.springframework.web.reactive.function.server.RouterFunctions.r
 import co.caio.cerberus.db.ChronicleRecipeMetadataDatabase;
 import co.caio.cerberus.db.RecipeMetadataDatabase;
 import co.caio.cerberus.search.Searcher;
+import co.caio.cerberus.search.Searcher.Builder;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.micrometer.CircuitBreakerMetrics;
 import java.time.Duration;
@@ -52,7 +53,10 @@ public class BootApplication {
 
   @Bean
   Searcher getSearcher() {
-    return new Searcher.Builder().dataDirectory(searchConfiguration.lucene.directory).build();
+    return new Builder()
+        .dataDirectory(searchConfiguration.lucene.directory)
+        .searchPolicy(new NoMatchAllDocsSearchPolicy())
+        .build();
   }
 
   @Bean("searchTimeout")
