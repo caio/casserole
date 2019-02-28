@@ -97,8 +97,7 @@ class ModelViewTest {
   @Test
   void singlePageResultShouldHaveNoPagination() {
     var unusedQuery = new SearchQuery.Builder().fulltext("unused").build();
-    var result =
-        new SearchResult.Builder().totalHits(1).addRecipe(1, "recipe 1", "doest matter").build();
+    var result = new SearchResult.Builder().totalHits(1).addRecipe(1).build();
 
     var doc = parseOutput(modelView.renderSearch(unusedQuery, result, uriBuilder));
 
@@ -112,11 +111,7 @@ class ModelViewTest {
   void firstPageShouldNotHavePreviousPagination() {
     var unusedQuery = new SearchQuery.Builder().fulltext("unused").build();
     var resultWithNextPage =
-        new SearchResult.Builder()
-            .totalHits(3)
-            .addRecipe(1, "recipe 1", "doest matter")
-            .addRecipe(2, "recipe 2", "doest matter")
-            .build();
+        new SearchResult.Builder().totalHits(3).addRecipe(1).addRecipe(2).build();
 
     var doc = parseOutput(modelView.renderSearch(unusedQuery, resultWithNextPage, uriBuilder));
 
@@ -132,8 +127,8 @@ class ModelViewTest {
     var offsetResultWithNextPage =
         new SearchResult.Builder()
             .totalHits(5) // 2 (first page) + 2 (this result) + 1 (next page)
-            .addRecipe(3, "recipe 3", "doest matter")
-            .addRecipe(4, "recipe 4", "doest matter")
+            .addRecipe(3)
+            .addRecipe(4)
             .build();
 
     var doc =
@@ -153,8 +148,8 @@ class ModelViewTest {
     var offsetResultWithNextPage =
         new SearchResult.Builder()
             .totalHits(4) // 2 (first page) + 2 (this result)
-            .addRecipe(3, "recipe 3", "doest matter")
-            .addRecipe(4, "recipe 4", "doest matter")
+            .addRecipe(3)
+            .addRecipe(4)
             .build();
 
     var doc =
@@ -174,8 +169,8 @@ class ModelViewTest {
     var offsetResultWithNextPage =
         new SearchResult.Builder()
             .totalHits(4) // 2 (first page) + 2 (this result)
-            .addRecipe(3, "recipe 3", "doest matter")
-            .addRecipe(4, "recipe 4", "doest matter")
+            .addRecipe(3)
+            .addRecipe(4)
             .build();
 
     var doc = parseOutput(modelView.renderSearch(secondPage, offsetResultWithNextPage, uriBuilder));
@@ -192,8 +187,8 @@ class ModelViewTest {
     var offsetResultWithNextPage =
         new SearchResult.Builder()
             .totalHits(4) // 2 (first page) + 2 (this result)
-            .addRecipe(3, "recipe 3", "doest matter")
-            .addRecipe(4, "recipe 4", "doest matter")
+            .addRecipe(3)
+            .addRecipe(4)
             .build();
 
     var doc = parseOutput(modelView.renderSearch(secondPage, offsetResultWithNextPage, uriBuilder));

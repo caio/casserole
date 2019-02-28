@@ -4,7 +4,6 @@ import co.caio.cerberus.db.RecipeMetadata;
 import co.caio.cerberus.db.RecipeMetadataDatabase;
 import co.caio.cerberus.model.SearchQuery;
 import co.caio.cerberus.model.SearchResult;
-import co.caio.cerberus.model.SearchResultRecipe;
 import co.caio.tablier.model.ErrorInfo;
 import co.caio.tablier.model.RecipeInfo;
 import co.caio.tablier.model.SearchResultsInfo;
@@ -90,7 +89,7 @@ class ModelView {
     var searchBuilder =
         new SearchResultsInfo.Builder()
             .paginationStart(query.offset() + 1)
-            .paginationEnd(result.recipes().size() + query.offset())
+            .paginationEnd(result.recipeIds().size() + query.offset())
             .numMatching(result.totalHits());
 
     if (!isLastPage) {
@@ -103,7 +102,7 @@ class ModelView {
           uriBuilder.replaceQueryParam("page", currentPage - 1).build().toUriString());
     }
 
-    searchBuilder.recipes(renderRecipes(result.recipes(), recipeGoUriComponents));
+    searchBuilder.recipes(renderRecipes(result.recipeIds(), recipeGoUriComponents));
 
     // Sidebar links always lead to the first page
     uriBuilder.replaceQueryParam("page");
@@ -131,11 +130,11 @@ class ModelView {
         + query.dietThreshold().size(); // First bite
   }
 
-  private Iterable<RecipeInfo> renderRecipes(
-      List<SearchResultRecipe> recipes, UriComponents uriComponents) {
-    var recipeIds = recipes.stream().map(SearchResultRecipe::recipeId).collect(Collectors.toList());
-    return db.findAllById(recipeIds)
+  private Iterable<RecipeInfo> renderRecipes(List<Long> recipeIds, UriComponents uriComponents) {
+    return recipeIds
         .stream()
+        .map(db::findById)
+        .flatMap(Optional::stream)
         .map(r -> new RecipeMetadataRecipeInfoAdapter(r, uriComponents))
         .collect(Collectors.toList());
   }
