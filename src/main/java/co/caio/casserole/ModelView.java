@@ -84,7 +84,7 @@ class ModelView {
     int currentPage = (query.offset() / pageSize) + 1;
 
     var recipeGoUriComponents =
-        uriBuilder.cloneBuilder().replacePath(GO_SLUG_ID_PATH).encode().build();
+        uriBuilder.cloneBuilder().replacePath(GO_SLUG_ID_PATH).build();
 
     var searchBuilder =
         new SearchResultsInfo.Builder()
@@ -165,7 +165,7 @@ class ModelView {
     return Recipe.template(
         new SiteInfo.Builder().title(recipe.getName()).searchIsAutoFocus(false).build(),
         new RecipeMetadataRecipeInfoAdapter(
-            recipe, builder.replacePath(GO_SLUG_ID_PATH).encode().build()));
+            recipe, builder.replacePath(GO_SLUG_ID_PATH).build()));
   }
 
   static class RecipeMetadataRecipeInfoAdapter implements RecipeInfo {

@@ -19,7 +19,7 @@ public class AccessLogConfiguration {
   }
 
   static class RecipeClickHttpTraceRepository implements HttpTraceRepository {
-    private static final Logger logger = LoggerFactory.getLogger("cerberus.click");
+    private static final Logger logger = LoggerFactory.getLogger("casserole.click");
 
     private HttpTraceRepository delegate;
 

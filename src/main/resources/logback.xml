@@ -13,7 +13,7 @@
     </encoder>
   </appender>
 
-  <logger name="cerberus.click" level="debug" additivity="false">
+  <logger name="casserole.click" level="debug" additivity="false">
       <appender-ref ref="CLICKLOG" />
   </logger>
 
