@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+    </encoder>
+  </appender>
+
+  <appender name="CLICKLOG" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>%msg%n</pattern>
+    </encoder>
+  </appender>
+
+  <logger name="cerberus.click" level="debug" additivity="false">
+      <appender-ref ref="CLICKLOG" />
+  </logger>
+
+  <logger name="io.netty" level="warn" additivity="false">
+    <appender-ref ref="STDOUT" />
+  </logger>
+
+  <logger name="ch.qos.logback" level="error" additivity="false">
+    <appender-ref ref="STDOUT" />
+  </logger>
+
+  <logger name="co.caio.cerberus" level="info" additivity="false">
+    <appender-ref ref="STDOUT" />
+  </logger>
+
+  <root level="error">
+    <appender-ref ref="STDOUT" />
+  </root>
+
+</configuration>
