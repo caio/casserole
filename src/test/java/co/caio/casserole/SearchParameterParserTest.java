@@ -1,8 +1,8 @@
-package co.caio.cerberus.boot;
+package co.caio.casserole;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import co.caio.cerberus.boot.SearchParameterParser.SearchParameterException;
+import co.caio.casserole.SearchParameterParser.SearchParameterException;
 import co.caio.cerberus.model.SearchQuery;
 import co.caio.cerberus.model.SearchQuery.RangedSpec;
 import co.caio.cerberus.model.SearchQuery.SortOrder;

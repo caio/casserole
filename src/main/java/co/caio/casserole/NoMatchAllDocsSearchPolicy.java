@@ -1,6 +1,6 @@
-package co.caio.cerberus.boot;
+package co.caio.casserole;
 
-import co.caio.cerberus.boot.SearchParameterParser.SearchParameterException;
+import co.caio.casserole.SearchParameterParser.SearchParameterException;
 import co.caio.cerberus.search.SearchPolicy;
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.Query;

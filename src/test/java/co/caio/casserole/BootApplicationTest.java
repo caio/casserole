@@ -1,4 +1,4 @@
-package co.caio.cerberus.boot;
+package co.caio.casserole;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;

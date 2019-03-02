@@ -19,7 +19,7 @@
     <description>Spring Boot Webflux.fn</description>
 
     <properties>
-        <start-class>co.caio.cerberus.boot.BootApplication</start-class>
+        <start-class>co.caio.casserole.BootApplication</start-class>
 
         <cerberus.version>0.0.2</cerberus.version>
         <tablier.version>0.2.4</tablier.version>
@@ -139,13 +139,6 @@
         </resources>
         <pluginManagement>
             <plugins>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-compiler-plugin</artifactId>
-                    <configuration>
-                        <parameters>true</parameters>
-                    </configuration>
-                </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-jar-plugin</artifactId>

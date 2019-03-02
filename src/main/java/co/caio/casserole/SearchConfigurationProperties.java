@@ -1,4 +1,4 @@
-package co.caio.cerberus.boot;
+package co.caio.casserole;
 
 import java.nio.file.Path;
 import java.time.Duration;

@@ -1,4 +1,4 @@
-package co.caio.cerberus.boot;
+package co.caio.casserole;
 
 import static org.springframework.web.reactive.function.server.RouterFunctions.route;
 

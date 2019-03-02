@@ -1,10 +1,10 @@
-package co.caio.cerberus.boot;
+package co.caio.casserole;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 import co.caio.cerberus.Util;
-import co.caio.cerberus.boot.ModelView.OverPaginationError;
-import co.caio.cerberus.boot.ModelView.RecipeNotFoundError;
+import co.caio.casserole.ModelView.OverPaginationError;
+import co.caio.casserole.ModelView.RecipeNotFoundError;
 import co.caio.cerberus.db.HashMapRecipeMetadataDatabase;
 import co.caio.cerberus.db.RecipeMetadata;
 import co.caio.cerberus.model.SearchQuery;

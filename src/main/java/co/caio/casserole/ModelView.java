@@ -1,4 +1,4 @@
-package co.caio.cerberus.boot;
+package co.caio.casserole;
 
 import co.caio.cerberus.db.RecipeMetadata;
 import co.caio.cerberus.db.RecipeMetadataDatabase;

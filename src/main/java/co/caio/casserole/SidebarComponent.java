@@ -1,4 +1,4 @@
-package co.caio.cerberus.boot;
+package co.caio.casserole;
 
 import co.caio.cerberus.model.SearchQuery;
 import co.caio.cerberus.model.SearchQuery.RangedSpec;

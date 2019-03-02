@@ -15,7 +15,7 @@
     <appender-ref ref="STDOUT" />
   </logger>
 
-  <logger name="co.caio.cerberus" level="info" additivity="false">
+  <logger name="co.caio.casserole" level="info" additivity="false">
     <appender-ref ref="STDOUT" />
   </logger>
 

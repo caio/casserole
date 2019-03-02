@@ -1,4 +1,4 @@
-package co.caio.cerberus.boot;
+package co.caio.casserole;
 
 import com.fizzed.rocker.RockerModel;
 import com.fizzed.rocker.runtime.ArrayOfByteArraysOutput;

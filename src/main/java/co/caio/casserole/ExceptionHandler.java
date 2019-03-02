@@ -1,8 +1,8 @@
-package co.caio.cerberus.boot;
+package co.caio.casserole;
 
-import co.caio.cerberus.boot.ModelView.OverPaginationError;
-import co.caio.cerberus.boot.ModelView.RecipeNotFoundError;
-import co.caio.cerberus.boot.SearchParameterParser.SearchParameterException;
+import co.caio.casserole.ModelView.OverPaginationError;
+import co.caio.casserole.ModelView.RecipeNotFoundError;
+import co.caio.casserole.SearchParameterParser.SearchParameterException;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerOpenException;
 import java.util.Map;
 import java.util.Optional;

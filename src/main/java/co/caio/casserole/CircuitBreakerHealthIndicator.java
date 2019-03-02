@@ -1,4 +1,4 @@
-package co.caio.cerberus.boot;
+package co.caio.casserole;
 
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import org.springframework.boot.actuate.health.Health;

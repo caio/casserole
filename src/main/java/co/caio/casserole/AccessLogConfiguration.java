@@ -1,4 +1,4 @@
-package co.caio.cerberus.boot;
+package co.caio.casserole;
 
 import java.util.List;
 import org.slf4j.Logger;
