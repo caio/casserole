@@ -8,7 +8,6 @@ import co.caio.tablier.model.ErrorInfo;
 import co.caio.tablier.model.RecipeInfo;
 import co.caio.tablier.model.SearchResultsInfo;
 import co.caio.tablier.model.SiteInfo;
-import co.caio.tablier.model.SiteInfo.Builder;
 import co.caio.tablier.view.Error;
 import co.caio.tablier.view.Index;
 import co.caio.tablier.view.Recipe;
@@ -34,9 +33,9 @@ class ModelView {
   static final String ERROR_PAGE_TITLE = "An Error Has Occurred";
 
   private static final SiteInfo DEFAULT_UNSTABLE_INDEX_SITE =
-      new Builder().title(INDEX_PAGE_TITLE).isUnstable(true).build();
+      new SiteInfo.Builder().title(INDEX_PAGE_TITLE).isUnstable(true).build();
   private static final SiteInfo DEFAULT_INDEX_SITE =
-      new Builder().title(INDEX_PAGE_TITLE).searchIsAutoFocus(true).build();
+      new SiteInfo.Builder().title(INDEX_PAGE_TITLE).searchIsAutoFocus(true).build();
   private static final SiteInfo DEFAULT_ERROR_SITE =
       new SiteInfo.Builder().title(ERROR_PAGE_TITLE).searchIsAutoFocus(true).build();
 
@@ -83,8 +82,7 @@ class ModelView {
     boolean isLastPage = query.offset() + pageSize >= result.totalHits();
     int currentPage = (query.offset() / pageSize) + 1;
 
-    var recipeGoUriComponents =
-        uriBuilder.cloneBuilder().replacePath(GO_SLUG_ID_PATH).build();
+    var recipeGoUriComponents = uriBuilder.cloneBuilder().replacePath(GO_SLUG_ID_PATH).build();
 
     var searchBuilder =
         new SearchResultsInfo.Builder()
@@ -164,8 +162,7 @@ class ModelView {
 
     return Recipe.template(
         new SiteInfo.Builder().title(recipe.getName()).searchIsAutoFocus(false).build(),
-        new RecipeMetadataRecipeInfoAdapter(
-            recipe, builder.replacePath(GO_SLUG_ID_PATH).build()));
+        new RecipeMetadataRecipeInfoAdapter(recipe, builder.replacePath(GO_SLUG_ID_PATH).build()));
   }
 
   static class RecipeMetadataRecipeInfoAdapter implements RecipeInfo {
