@@ -1,0 +1,16 @@
+tmp
+# IntelliJ
+.idea/
+out/
+*.iml
+# Java
+*.class
+*.jar
+# crash logs
+hs_err_pid*
+# Maven
+target/
+# Maven wrapper
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+.mvn/wrapper/MavenWrapperDownloader.java
