@@ -26,6 +26,7 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.reactive.server.WebTestClient;
@@ -189,6 +190,19 @@ class BootApplicationTest {
             .getResponseBody();
     assertNotNull(body);
     return Jsoup.parse(body);
+  }
+
+  @Test
+  void canFetchGzippedCss() {
+    testClient
+        .get()
+        .uri("/css/main.css")
+        .header(HttpHeaders.ACCEPT_ENCODING, "gzip")
+        .exchange()
+        .expectStatus()
+        .is2xxSuccessful()
+        .expectHeader()
+        .value(HttpHeaders.CONTENT_ENCODING, s -> assertEquals("gzip", s));
   }
 
   void assertGet(String uri, HttpStatus status) {
