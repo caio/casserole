@@ -66,7 +66,7 @@ public class ExceptionHandler extends AbstractErrorWebExceptionHandler {
       spec = DEFAULT_ERROR_SPEC;
     }
 
-    return ServerResponse.status(spec.status)
+    return ServerResponse.status(spec.getStatus())
         .body(
             BodyInserters.fromObject(
                 modelView.renderError(
@@ -97,6 +97,10 @@ public class ExceptionHandler extends AbstractErrorWebExceptionHandler {
   private static final ErrorSpec UNKNOWN_PARAMETER =
       new ErrorSpec(HttpStatus.BAD_REQUEST, "Invalid/Unknown Parameter");
 
+  private static final ErrorSpec RECIPE_NOT_FOUND =
+      new ErrorSpec(
+          HttpStatus.NOT_FOUND, "Recipe Not Found", "The provided URL is likely incorrect.");
+
   private static final Map<Class, ErrorSpec> errorSpecMap =
       Map.of(
           IllegalStateException.class,
@@ -107,9 +111,10 @@ public class ExceptionHandler extends AbstractErrorWebExceptionHandler {
           UNKNOWN_PARAMETER,
           OverPaginationError.class,
           new ErrorSpec(HttpStatus.BAD_REQUEST, "Invalid Page Number"),
+          NumberFormatException.class,
+          RECIPE_NOT_FOUND,
           RecipeNotFoundError.class,
-          new ErrorSpec(
-              HttpStatus.NOT_FOUND, "Recipe Not Found", "The provided URL is likely incorrect."),
+          RECIPE_NOT_FOUND,
           TimeoutException.class,
           new ErrorSpec(
               HttpStatus.REQUEST_TIMEOUT,

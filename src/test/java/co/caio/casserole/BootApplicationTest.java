@@ -205,6 +205,41 @@ class BootApplicationTest {
         .value(HttpHeaders.CONTENT_ENCODING, s -> assertEquals("gzip", s));
   }
 
+  @Test
+  void recipeEndpointWorks() {
+    var basic = Util.getBasicRecipe();
+
+    var body =
+        testClient
+            .get()
+            .uri("/recipe/" + basic.slug() + "/" + basic.recipeId())
+            .exchange()
+            .expectStatus()
+            .is2xxSuccessful()
+            .expectBody(String.class)
+            .returnResult()
+            .getResponseBody();
+
+    var doc = Jsoup.parse(body);
+    assertTrue(doc.title().startsWith(basic.name()));
+  }
+
+  @Test
+  void badRecipeURLYields404() {
+    var basic = Util.getBasicRecipe();
+    // Make sure the correct uri works
+    assertGet("/recipe/" + basic.slug() + "/" + basic.recipeId(), HttpStatus.OK);
+    // But wrong slug 404s
+    assertGet("/recipe/" + basic.slug() + "wrong" + "/" + basic.recipeId(), HttpStatus.NOT_FOUND);
+    // And wrong id 404s
+    assertGet("/recipe/" + basic.slug() + "/" + (basic.recipeId() - 1), HttpStatus.NOT_FOUND);
+    // Even non-numeric id 404s
+    assertGet("/recipe/" + basic.slug() + "/id_that_doesnt_parse_as_number", HttpStatus.NOT_FOUND);
+    // And, of course, incomplete uris also 404s
+    assertGet("/recipe/" + basic.slug(), HttpStatus.NOT_FOUND);
+    assertGet("/recipe/", HttpStatus.NOT_FOUND);
+  }
+
   void assertGet(String uri, HttpStatus status) {
     testClient
         .get()
