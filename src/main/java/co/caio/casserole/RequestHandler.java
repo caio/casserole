@@ -34,13 +34,13 @@ public class RequestHandler {
     this.modelView = modelView;
   }
 
-  public Mono<ServerResponse> index(ServerRequest ignored) {
+  Mono<ServerResponse> index(ServerRequest ignored) {
     return ServerResponse.ok()
         .contentType(MediaType.TEXT_HTML)
         .body(BodyInserters.fromObject(modelView.renderIndex()));
   }
 
-  public Mono<ServerResponse> search(ServerRequest request) {
+  Mono<ServerResponse> search(ServerRequest request) {
     var query = parser.buildQuery(request.queryParams().toSingleValueMap());
 
     return Mono.fromCallable(() -> breaker.executeCallable(() -> searcher.search(query)))
@@ -59,7 +59,7 @@ public class RequestHandler {
                                 query, result, UriComponentsBuilder.fromUri(request.uri())))));
   }
 
-  public Mono<ServerResponse> recipe(ServerRequest request) {
+  Mono<ServerResponse> recipe(ServerRequest request) {
     var slug = request.pathVariable("slug");
     var recipeId = Long.parseLong(request.pathVariable("recipeId"));
     return ServerResponse.ok()
@@ -70,7 +70,7 @@ public class RequestHandler {
                     recipeId, slug, UriComponentsBuilder.fromUri(request.uri()))));
   }
 
-  public Mono<ServerResponse> go(ServerRequest request) {
+  Mono<ServerResponse> go(ServerRequest request) {
     var slug = request.pathVariable("slug");
     var recipeId = Long.parseLong(request.pathVariable("recipeId"));
     var recipe = modelView.fetchRecipe(recipeId, slug);
