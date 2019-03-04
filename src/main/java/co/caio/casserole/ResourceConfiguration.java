@@ -13,8 +13,8 @@ public class ResourceConfiguration implements WebFluxConfigurer {
   @Override
   public void addResourceHandlers(ResourceHandlerRegistry registry) {
     registry
-        .addResourceHandler("/**/*.css")
-        .addResourceLocations("classpath:/tablier/")
+        .addResourceHandler("/css/*.css")
+        .addResourceLocations("classpath:/tablier/css/")
         .resourceChain(true)
         .addResolver(new EncodedResourceResolver())
         .addResolver(new PathResourceResolver());
