@@ -225,6 +225,14 @@ class BootApplicationTest {
   }
 
   @Test
+  void canFetchStaticPagesProperly() {
+    // Can't access the resource with its full name
+    assertGet("/page/about.html", HttpStatus.NOT_FOUND);
+    // But using the name without ".html" works
+    assertGet("/page/about", HttpStatus.OK);
+  }
+
+  @Test
   void badRecipeURLYields404() {
     var basic = Util.getBasicRecipe();
     // Make sure the correct uri works
