@@ -175,7 +175,7 @@ class ModelViewTest {
 
     var doc = parseOutput(modelView.renderSearch(secondPage, offsetResultWithNextPage, uriBuilder));
 
-    var sidebarLinks = doc.select("div#sidebar div.filter-group li a.button").eachAttr("href");
+    var sidebarLinks = doc.select("div#sidebar ul.menu-list li a").eachAttr("href");
     assertTrue(sidebarLinks.size() > 0);
     assertTrue(sidebarLinks.stream().noneMatch(s -> s.contains("page=")));
   }
