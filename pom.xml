@@ -15,13 +15,13 @@
     <packaging>jar</packaging>
     <version>0.0.1-SNAPSHOT</version>
 
-    <name>Cerberus Web UI</name>
+    <name>gula.recipes Web UI</name>
     <description>Spring Boot Webflux.fn</description>
 
     <properties>
         <start-class>co.caio.casserole.BootApplication</start-class>
 
-        <cerberus.version>0.0.3</cerberus.version>
+        <cerberus.version>0.0.4</cerberus.version>
         <tablier.version>0.2.5</tablier.version>
 
         <spring-boot.version>2.1.3.RELEASE</spring-boot.version>
