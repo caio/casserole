@@ -206,7 +206,7 @@ class SidebarComponent {
   private static final List<StringOptionSpec> dietFilterOptions =
       List.of(
           new StringOptionSpec("Low Carb", "diet", "lowcarb"),
-          new StringOptionSpec("Vegan", "diet", "vegan"),
+          new StringOptionSpec("Vegetarian", "diet", "vegetarian"),
           new StringOptionSpec("Keto", "diet", "keto"),
           new StringOptionSpec("Paleo", "diet", "paleo"));
 
