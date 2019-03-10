@@ -153,7 +153,9 @@ class SidebarComponent {
 
       var href =
           isActive
-              ? uriBuilder.replaceQueryParam(queryName)
+              // XXX improve: hardcoded "science" parameter
+              // Make sure the additional parameter is removed as well
+              ? uriBuilder.replaceQueryParam(queryName).replaceQueryParam("science")
               : uriBuilder.replaceQueryParam(queryName, queryValue);
 
       return new FilterInfo.FilterOption.Builder()

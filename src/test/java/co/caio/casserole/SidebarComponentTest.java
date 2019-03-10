@@ -106,6 +106,20 @@ class SidebarComponentTest {
   }
 
   @Test
+  void removingSelectedDietAlsoRemovesScience() {
+    var query = new SearchQuery.Builder().fulltext("peanut").putDietThreshold("keto", 0.8f).build();
+    var uriBuilder = UriComponentsBuilder.fromUriString("/test?diet=keto&science=0.8");
+    var sidebar = sidebarComponent.build(query, uriBuilder);
+
+    var dietInfo = findFilterInfo(sidebar, SidebarComponent.DIETS_INFO_NAME);
+    var active = findActive(dietInfo);
+    assertEquals(1, active.size());
+
+    var params = getQueryParams(active.get(0).href());
+    assertFalse(params.containsKey("science"));
+  }
+
+  @Test
   void activeFilterHrefRemovesFilterParam() {
     var query =
         new SearchQuery.Builder().fulltext("ignored").totalTime(RangedSpec.of(30, 60)).build();
