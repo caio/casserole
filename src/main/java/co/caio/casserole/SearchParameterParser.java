@@ -17,6 +17,16 @@ class SearchParameterParser {
   }
 
   SearchQuery buildQuery(Map<String, String> params) {
+    try {
+      return _buildQuery(params);
+    } catch (SearchParameterException rethrown) {
+      throw rethrown;
+    } catch (Exception wrapped) {
+      throw new SearchParameterException(wrapped);
+    }
+  }
+
+  private SearchQuery _buildQuery(Map<String, String> params) {
     var builder = new SearchQuery.Builder().maxResults(pageSize);
 
     var fulltext = params.getOrDefault("q", "").strip();
@@ -129,6 +139,10 @@ class SearchParameterParser {
   static class SearchParameterException extends RuntimeException {
     SearchParameterException(String message) {
       super(message);
+    }
+
+    SearchParameterException(Throwable throwable) {
+      super(throwable);
     }
   }
 }

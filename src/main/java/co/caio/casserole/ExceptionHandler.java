@@ -24,7 +24,6 @@ import org.springframework.web.reactive.function.server.RouterFunctions;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import org.springframework.web.server.ResponseStatusException;
-import org.springframework.web.server.ServerWebInputException;
 import reactor.core.publisher.Mono;
 
 @Component
@@ -103,10 +102,6 @@ public class ExceptionHandler extends AbstractErrorWebExceptionHandler {
 
   private static final Map<Class, ErrorSpec> errorSpecMap =
       Map.of(
-          IllegalStateException.class,
-          UNKNOWN_PARAMETER,
-          ServerWebInputException.class,
-          UNKNOWN_PARAMETER,
           SearchParameterException.class,
           UNKNOWN_PARAMETER,
           OverPaginationError.class,

@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 
+import co.caio.casserole.SearchParameterParser.SearchParameterException;
 import co.caio.cerberus.Util;
 import co.caio.cerberus.db.HashMapRecipeMetadataDatabase;
 import co.caio.cerberus.db.RecipeMetadata;
@@ -102,7 +103,7 @@ class BootApplicationTest {
 
   @Test
   void circuitOpensAfterManyErrors() {
-    given(searcher.search(any())).willThrow(IllegalStateException.class);
+    given(searcher.search(any())).willThrow(SearchParameterException.class);
     // error rate of 100%, but the default ring buffer is of 100 so
     // the circuit should only open after the 100th request
     for (int i = 0; i < 100; i++) {
