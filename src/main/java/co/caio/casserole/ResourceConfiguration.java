@@ -30,6 +30,12 @@ public class ResourceConfiguration implements WebFluxConfigurer {
         .addResourceLocations("classpath:/tablier/pages/")
         .resourceChain(true)
         .addResolver(new StaticHtmlResolver());
+
+    registry
+        .addResourceHandler("/img/*")
+        .addResourceLocations("classpath:/tablier/img/")
+        .resourceChain(true)
+        .addResolver(new PathResourceResolver());
   }
 
   @Override

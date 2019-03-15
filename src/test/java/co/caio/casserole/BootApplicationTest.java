@@ -234,6 +234,11 @@ class BootApplicationTest {
   }
 
   @Test
+  void canFetchFavicon() {
+    assertGet("/img/favicon.ico", HttpStatus.OK, new MediaType("image", "x-icon"));
+  }
+
+  @Test
   void badRecipeURLYields404() {
     var basic = Util.getBasicRecipe();
     // Make sure the correct uri works
@@ -249,7 +254,7 @@ class BootApplicationTest {
     assertGet("/recipe/", HttpStatus.NOT_FOUND);
   }
 
-  void assertGet(String uri, HttpStatus status) {
+  void assertGet(String uri, HttpStatus status, MediaType contentType) {
     testClient
         .get()
         .uri(uri)
@@ -257,9 +262,13 @@ class BootApplicationTest {
         .expectStatus()
         .isEqualTo(status)
         .expectHeader()
-        .contentTypeCompatibleWith(MediaType.TEXT_HTML)
+        .contentTypeCompatibleWith(contentType)
         .expectBody(String.class)
         .returnResult()
         .getResponseBody();
+  }
+
+  void assertGet(String uri, HttpStatus status) {
+    assertGet(uri, status, MediaType.TEXT_HTML);
   }
 }
