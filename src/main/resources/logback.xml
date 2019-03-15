@@ -7,16 +7,6 @@
     </encoder>
   </appender>
 
-  <appender name="CLICKLOG" class="ch.qos.logback.core.ConsoleAppender">
-    <encoder>
-      <pattern>%msg%n</pattern>
-    </encoder>
-  </appender>
-
-  <logger name="casserole.click" level="debug" additivity="false">
-      <appender-ref ref="CLICKLOG" />
-  </logger>
-
   <logger name="io.netty" level="warn" additivity="false">
     <appender-ref ref="STDOUT" />
   </logger>

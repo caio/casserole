@@ -1,11 +1,17 @@
 package co.caio.casserole;
 
+import java.util.List;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.Resource;
 import org.springframework.http.codec.ServerCodecConfigurer;
 import org.springframework.web.reactive.config.ResourceHandlerRegistry;
 import org.springframework.web.reactive.config.WebFluxConfigurer;
+import org.springframework.web.reactive.resource.AbstractResourceResolver;
 import org.springframework.web.reactive.resource.EncodedResourceResolver;
 import org.springframework.web.reactive.resource.PathResourceResolver;
+import org.springframework.web.reactive.resource.ResourceResolverChain;
+import org.springframework.web.server.ServerWebExchange;
+import reactor.core.publisher.Mono;
 
 @Configuration
 public class ResourceConfiguration implements WebFluxConfigurer {
@@ -18,10 +24,36 @@ public class ResourceConfiguration implements WebFluxConfigurer {
         .resourceChain(true)
         .addResolver(new EncodedResourceResolver())
         .addResolver(new PathResourceResolver());
+
+    registry
+        .addResourceHandler("/page/*")
+        .addResourceLocations("classpath:/tablier/pages/")
+        .resourceChain(true)
+        .addResolver(new StaticHtmlResolver());
   }
 
   @Override
   public void configureHttpMessageCodecs(ServerCodecConfigurer configurer) {
     configurer.customCodecs().writer(new RockerModelHttpMessageWriter());
+  }
+
+  static class StaticHtmlResolver extends AbstractResourceResolver {
+
+    StaticHtmlResolver() {}
+
+    @Override
+    protected Mono<Resource> resolveResourceInternal(
+        ServerWebExchange exchange,
+        String requestPath,
+        List<? extends Resource> locations,
+        ResourceResolverChain chain) {
+      return chain.resolveResource(exchange, requestPath + ".html", locations);
+    }
+
+    @Override
+    protected Mono<String> resolveUrlPathInternal(
+        String resourceUrlPath, List<? extends Resource> locations, ResourceResolverChain chain) {
+      return chain.resolveUrlPath(resourceUrlPath, locations);
+    }
   }
 }

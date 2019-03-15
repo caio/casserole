@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 
+import co.caio.casserole.SearchParameterParser.SearchParameterException;
 import co.caio.cerberus.Util;
 import co.caio.cerberus.db.HashMapRecipeMetadataDatabase;
 import co.caio.cerberus.db.RecipeMetadata;
@@ -102,7 +103,7 @@ class BootApplicationTest {
 
   @Test
   void circuitOpensAfterManyErrors() {
-    given(searcher.search(any())).willThrow(IllegalStateException.class);
+    given(searcher.search(any())).willThrow(SearchParameterException.class);
     // error rate of 100%, but the default ring buffer is of 100 so
     // the circuit should only open after the 100th request
     for (int i = 0; i < 100; i++) {
@@ -222,6 +223,14 @@ class BootApplicationTest {
 
     var doc = Jsoup.parse(body);
     assertTrue(doc.title().startsWith(basic.name()));
+  }
+
+  @Test
+  void canFetchStaticPagesProperly() {
+    // Can't access the resource with its full name
+    assertGet("/page/about.html", HttpStatus.NOT_FOUND);
+    // But using the name without ".html" works
+    assertGet("/page/about", HttpStatus.OK);
   }
 
   @Test
