@@ -1,5 +1,6 @@
 package co.caio.casserole;
 
+import co.caio.cerberus.model.Diet;
 import co.caio.cerberus.model.SearchQuery;
 import co.caio.cerberus.model.SearchQuery.RangedSpec;
 import co.caio.cerberus.model.SearchQuery.SortOrder;
@@ -198,19 +199,35 @@ class SidebarComponent {
     }
   }
 
-  private static final List<SortOptionSpec> sortOptions =
-      List.of(
-          new SortOptionSpec("Relevance", SortOrder.RELEVANCE, "relevance"),
-          new SortOptionSpec("Fastest to Cook", SortOrder.TOTAL_TIME, "total_time"),
-          new SortOptionSpec("Least Ingredients", SortOrder.NUM_INGREDIENTS, "num_ingredients"),
-          new SortOptionSpec("Calories", SortOrder.CALORIES, "calories"));
+  static {
+    var sorts =
+        List.of(
+            new SortOptionSpec("Relevance", SortOrder.RELEVANCE, "relevance"),
+            new SortOptionSpec("Fastest to Cook", SortOrder.TOTAL_TIME, "total_time"),
+            new SortOptionSpec("Least Ingredients", SortOrder.NUM_INGREDIENTS, "num_ingredients"),
+            new SortOptionSpec("Calories", SortOrder.CALORIES, "calories"));
+    // Make sure we don't generate URIs with unrecognizable sort order
+    sorts.forEach(o -> SortOrder.valueOf(o.queryValue.toUpperCase()));
+    sortOptions = sorts;
 
-  private static final List<StringOptionSpec> dietFilterOptions =
-      List.of(
-          new StringOptionSpec("Low Carb", "diet", "lowcarb"),
-          new StringOptionSpec("Vegan", "diet", "vegan"),
-          new StringOptionSpec("Keto", "diet", "keto"),
-          new StringOptionSpec("Paleo", "diet", "paleo"));
+    var diets =
+        List.of(
+            new StringOptionSpec("Low Carb", "diet", "lowcarb"),
+            new StringOptionSpec("Vegetarian", "diet", "vegetarian"),
+            new StringOptionSpec("Keto", "diet", "keto"),
+            new StringOptionSpec("Paleo", "diet", "paleo"));
+
+    // Make sure we don't generate URIs with unrecognizable diet name
+    diets.forEach(
+        d -> {
+          assert (Diet.isKnown(d.queryValue));
+        });
+    dietFilterOptions = diets;
+  }
+
+  private static final List<SortOptionSpec> sortOptions;
+
+  private static final List<StringOptionSpec> dietFilterOptions;
 
   private static final List<RangeOptionSpec> ingredientFilterOptions =
       List.of(
