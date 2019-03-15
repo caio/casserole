@@ -28,7 +28,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 @Component
 class ModelView {
 
-  static final String INDEX_PAGE_TITLE = "Your Private Recipe Search Website";
+  static final String INDEX_PAGE_TITLE = "The Private, Ad-Free Recipe Search Experience";
   static final String SEARCH_PAGE_TITLE = "Search Results";
   static final String ERROR_PAGE_TITLE = "An Error Has Occurred";
 
