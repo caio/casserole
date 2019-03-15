@@ -193,6 +193,11 @@ class ModelView {
     }
 
     @Override
+    public String crawlUrl() {
+      return metadata.getCrawlUrl();
+    }
+
+    @Override
     public String infoUrl() {
       return goUrl.replace("/go/", "/recipe/");
     }
