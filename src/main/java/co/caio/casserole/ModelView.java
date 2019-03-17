@@ -215,27 +215,27 @@ class ModelView {
 
     @Override
     public OptionalDouble fatContent() {
-      return OptionalDouble.empty();
+      return metadata.getFatContent();
     }
 
     @Override
     public OptionalDouble carbohydrateContent() {
-      return OptionalDouble.empty();
+      return metadata.getCarbohydrateContent();
     }
 
     @Override
     public OptionalDouble proteinContent() {
-      return OptionalDouble.empty();
+      return metadata.getProteinContent();
     }
 
     @Override
     public OptionalInt prepTime() {
-      return OptionalInt.empty();
+      return metadata.getPrepTime();
     }
 
     @Override
     public OptionalInt cookTime() {
-      return OptionalInt.empty();
+      return metadata.getCookTime();
     }
 
     @Override
