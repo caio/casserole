@@ -17,6 +17,7 @@ import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -213,6 +214,31 @@ class ModelView {
     }
 
     @Override
+    public OptionalDouble fatContent() {
+      return metadata.getFatContent();
+    }
+
+    @Override
+    public OptionalDouble carbohydrateContent() {
+      return metadata.getCarbohydrateContent();
+    }
+
+    @Override
+    public OptionalDouble proteinContent() {
+      return metadata.getProteinContent();
+    }
+
+    @Override
+    public OptionalInt prepTime() {
+      return metadata.getPrepTime();
+    }
+
+    @Override
+    public OptionalInt cookTime() {
+      return metadata.getCookTime();
+    }
+
+    @Override
     public OptionalInt totalTime() {
       return metadata.getTotalTime();
     }
@@ -220,11 +246,6 @@ class ModelView {
     @Override
     public List<String> ingredients() {
       return metadata.getIngredients();
-    }
-
-    @Override
-    public List<String> instructions() {
-      return metadata.getInstructions();
     }
   }
 
