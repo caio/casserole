@@ -16,6 +16,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 import org.springframework.web.reactive.function.server.RouterFunction;
 import org.springframework.web.reactive.function.server.ServerResponse;
+import reactor.core.scheduler.Schedulers;
 
 @SpringBootApplication
 @EnableConfigurationProperties
@@ -28,6 +29,7 @@ public class BootApplication {
   }
 
   public static void main(String[] args) {
+    Schedulers.enableMetrics();
     SpringApplication.run(BootApplication.class, args);
   }
 
