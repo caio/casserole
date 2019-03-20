@@ -8,9 +8,13 @@ using the WebFlux framework.
 [gula]: https://gula.recipes
 [boot]: https://spring.io/projects/spring-boot
 
-## Build
+## Assemble fat jar
 
-    mvn install
+    mvn package
+
+## Run server locally
+
+    mvn spring-boot:run
 
 ## Test
 
