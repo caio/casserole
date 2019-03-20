@@ -32,7 +32,7 @@ class ModelViewTest {
     var db = new HashMapRecipeMetadataDatabase();
     db.saveAll(
         Util.getSampleRecipes().map(RecipeMetadata::fromRecipe).collect(Collectors.toList()));
-    modelView = new ModelView(pageSize, db, breaker);
+    modelView = new ModelView(pageSize, Util.expectedIndexSize(), db, breaker);
   }
 
   private Document parseOutput(RockerModel rockerModel) {

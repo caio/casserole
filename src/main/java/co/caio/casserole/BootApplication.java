@@ -61,6 +61,11 @@ public class BootApplication {
         .build();
   }
 
+  @Bean
+  int numRecipes(Searcher searcher) {
+    return searcher.numDocs();
+  }
+
   @Bean("searchTimeout")
   Duration timeout() {
     return searchConfiguration.timeout;

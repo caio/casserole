@@ -43,17 +43,20 @@ class ModelView {
   private static final String DEFAULT_UNKNOWN_ERROR_SUBTITLE = "Unknown Error Cause";
 
   private final int pageSize;
+  private final int numRecipes;
   private final RecipeMetadataDatabase db;
   private final CircuitBreaker breaker;
   private final SidebarComponent sidebarComponent = new SidebarComponent();
 
   ModelView(
       @Qualifier("searchPageSize") int pageSize,
+      @Qualifier("numRecipes") int numRecipes,
       @Qualifier("metadataDb") RecipeMetadataDatabase db,
       CircuitBreaker breaker) {
     this.pageSize = pageSize;
     this.breaker = breaker;
     this.db = db;
+    this.numRecipes = numRecipes;
   }
 
   RockerModel renderIndex() {
@@ -87,6 +90,7 @@ class ModelView {
 
     var searchBuilder =
         new SearchResultsInfo.Builder()
+            .numRecipes(numRecipes)
             .paginationStart(query.offset() + 1)
             .paginationEnd(result.recipeIds().size() + query.offset())
             .numMatching(result.totalHits());
