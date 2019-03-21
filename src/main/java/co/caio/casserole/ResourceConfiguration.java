@@ -1,8 +1,10 @@
 package co.caio.casserole;
 
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.Resource;
+import org.springframework.http.CacheControl;
 import org.springframework.http.codec.ServerCodecConfigurer;
 import org.springframework.web.reactive.config.ResourceHandlerRegistry;
 import org.springframework.web.reactive.config.WebFluxConfigurer;
@@ -28,6 +30,7 @@ public class ResourceConfiguration implements WebFluxConfigurer {
     registry
         .addResourceHandler("/page/*")
         .addResourceLocations("classpath:/tablier/pages/")
+        .setCacheControl(CacheControl.maxAge(1, TimeUnit.HOURS))
         .resourceChain(true)
         .addResolver(new StaticHtmlResolver());
 
