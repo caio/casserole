@@ -175,9 +175,19 @@ class BootApplicationTest {
 
   @Test
   void canFetchGzippedCss() {
+    assertIsGzip("/css/main.css");
+  }
+
+  @Test
+  void staticPagesAreGzipped() {
+    assertIsGzip("/page/about");
+    assertIsGzip("/page/help");
+  }
+
+  private void assertIsGzip(String uri) {
     testClient
         .get()
-        .uri("/css/main.css")
+        .uri(uri)
         .header(HttpHeaders.ACCEPT_ENCODING, "gzip")
         .exchange()
         .expectStatus()

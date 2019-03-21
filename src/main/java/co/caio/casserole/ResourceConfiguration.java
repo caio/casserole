@@ -32,6 +32,7 @@ public class ResourceConfiguration implements WebFluxConfigurer {
         .addResourceLocations("classpath:/tablier/pages/")
         .setCacheControl(CacheControl.maxAge(1, TimeUnit.HOURS))
         .resourceChain(true)
+        .addResolver(new EncodedResourceResolver())
         .addResolver(new StaticHtmlResolver());
 
     registry
