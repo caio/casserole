@@ -234,6 +234,18 @@ class BootApplicationTest {
   }
 
   @Test
+  void staticPageHasMaxAgeHeader() {
+    testClient
+        .get()
+        .uri("/page/help")
+        .exchange()
+        .expectStatus()
+        .isEqualTo(HttpStatus.OK)
+        .expectHeader()
+        .valueEquals("Cache-Control", "max-age=3600");
+  }
+
+  @Test
   void canFetchFavicon() {
     assertGet("/img/favicon.ico", HttpStatus.OK, new MediaType("image", "x-icon"));
   }
