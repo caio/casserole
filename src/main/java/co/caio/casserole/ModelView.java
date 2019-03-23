@@ -109,7 +109,7 @@ class ModelView {
 
     // Sidebar links always lead to the first page
     uriBuilder.replaceQueryParam("page");
-    searchBuilder.sidebar(sidebarComponent.build(query, uriBuilder));
+    searchBuilder.sidebar(sidebarComponent.build(query, result, uriBuilder));
 
     searchBuilder.numAppliedFilters(deriveAppliedFilters(query));
 

@@ -1,9 +1,12 @@
 package co.caio.casserole;
 
 import co.caio.cerberus.model.Diet;
+import co.caio.cerberus.model.FacetData;
+import co.caio.cerberus.model.FacetData.LabelData;
 import co.caio.cerberus.model.SearchQuery;
 import co.caio.cerberus.model.SearchQuery.RangedSpec;
 import co.caio.cerberus.model.SearchQuery.SortOrder;
+import co.caio.cerberus.model.SearchResult;
 import co.caio.tablier.model.FilterInfo;
 import co.caio.tablier.model.FilterInfo.FilterOption;
 import co.caio.tablier.model.SidebarInfo;
@@ -19,18 +22,58 @@ class SidebarComponent {
   static final String TIME_INFO_NAME = "Limit Total Time";
   static final String NUTRITION_INFO_NAME = "Limit Nutrition (per serving)";
 
+  private static final SearchResult EMPTY_SEARCH_RESULT = new SearchResult.Builder().build();
+  private static final FacetData EMPTY_FACED_DATA =
+      new FacetData.Builder().dimension("EMPTY").build();
+  private static final LabelData EMPTY_LABEL_DATA = LabelData.of("EMPTY", 0);
+
   SidebarComponent() {}
 
   SidebarInfo build(SearchQuery query, UriComponentsBuilder uriBuilder) {
+    return build(query, EMPTY_SEARCH_RESULT, uriBuilder);
+  }
+
+  SidebarInfo build(SearchQuery query, SearchResult result, UriComponentsBuilder uriBuilder) {
     var builder = new SidebarInfo.Builder();
 
     addSortOptions(builder, query, uriBuilder.cloneBuilder());
-    addDietFilters(builder, query, uriBuilder.cloneBuilder());
-    addIngredientFilters(builder, query, uriBuilder.cloneBuilder());
-    addTotalTimeFilters(builder, query, uriBuilder.cloneBuilder());
-    addNutritionFilters(builder, query, uriBuilder.cloneBuilder());
+    addDietFilters(builder, query, uriBuilder.cloneBuilder(), getFacetData(result, "diet"));
+    addIngredientFilters(
+        builder, query, uriBuilder.cloneBuilder(), getFacetData(result, "num_ingredient"));
+    addTotalTimeFilters(
+        builder, query, uriBuilder.cloneBuilder(), getFacetData(result, "total_time"));
+    addNutritionFilters(
+        builder, query, uriBuilder.cloneBuilder(), getFacetData(result, "nutrition"));
 
     return builder.build();
+  }
+
+  // XXX Maybe change the result model to use hashmaps for the label
+  //     data since the order is irrelevant (or rather, the order is
+  //     only important when rendering)
+
+  // TODO expose cerberus.search.IndexField so that I don't need to
+  //      hardcode the key param for getFacetData()
+
+  // TODO figure out how to match LabelData
+
+  private FacetData getFacetData(SearchResult result, String key) {
+    return result
+        .facets()
+        .stream()
+        .filter(m -> m.dimension().equals(key))
+        .findFirst()
+        .orElse(EMPTY_FACED_DATA);
+  }
+
+  private int countLabelData(FacetData fd, String label) {
+    return (int)
+        fd.children()
+            .stream()
+            .filter(m -> m.label().equals(label))
+            .findFirst()
+            .orElse(EMPTY_LABEL_DATA)
+            .count();
   }
 
   private void addSortOptions(
@@ -46,7 +89,10 @@ class SidebarComponent {
   }
 
   private void addDietFilters(
-      SidebarInfo.Builder builder, SearchQuery query, UriComponentsBuilder uriBuilder) {
+      SidebarInfo.Builder builder,
+      SearchQuery query,
+      UriComponentsBuilder uriBuilder,
+      FacetData fd) {
     var selectedDiets = query.dietThreshold().keySet();
 
     if (selectedDiets.size() > 1) {
@@ -55,40 +101,60 @@ class SidebarComponent {
 
     var dietsFilterInfoBuilder = new FilterInfo.Builder().name(DIETS_INFO_NAME);
 
+    if (!fd.children().isEmpty()) {
+      dietsFilterInfoBuilder.showCounts(true);
+    }
+
     for (var spec : dietFilterOptions) {
-      dietsFilterInfoBuilder.addOptions(spec.buildOption(uriBuilder, selectedDiets));
+      dietsFilterInfoBuilder.addOptions(
+          spec.buildOption(uriBuilder, selectedDiets, countLabelData(fd, spec.queryValue)));
     }
 
     builder.addFilters(dietsFilterInfoBuilder.build());
   }
 
   private void addIngredientFilters(
-      SidebarInfo.Builder builder, SearchQuery query, UriComponentsBuilder uriBuilder) {
+      SidebarInfo.Builder builder,
+      SearchQuery query,
+      UriComponentsBuilder uriBuilder,
+      FacetData fd) {
     var activeIng = query.numIngredients().orElse(unselectedRange);
 
     var ingredientsFilterInfoBuilder = new FilterInfo.Builder().name(INGREDIENTS_INFO_NAME);
 
+    if (!fd.children().isEmpty()) {
+      ingredientsFilterInfoBuilder.showCounts(true);
+    }
+
     for (var spec : ingredientFilterOptions) {
-      ingredientsFilterInfoBuilder.addOptions(spec.buildOption(uriBuilder, activeIng));
+      ingredientsFilterInfoBuilder.addOptions(
+          spec.buildOption(uriBuilder, activeIng, countLabelData(fd, spec.queryValue)));
     }
 
     builder.addFilters(ingredientsFilterInfoBuilder.build());
   }
 
   private void addTotalTimeFilters(
-      SidebarInfo.Builder builder, SearchQuery query, UriComponentsBuilder uriBuilder) {
+      SidebarInfo.Builder builder,
+      SearchQuery query,
+      UriComponentsBuilder uriBuilder,
+      FacetData fd) {
     var activeTT = query.totalTime().orElse(unselectedRange);
     var timeFilterInfoBuilder = new FilterInfo.Builder().name(TIME_INFO_NAME);
 
     for (var spec : totalTimeFilterOptions) {
-      timeFilterInfoBuilder.addOptions(spec.buildOption(uriBuilder, activeTT));
+      timeFilterInfoBuilder.addOptions(
+          spec.buildOption(uriBuilder, activeTT, countLabelData(fd, spec.queryValue)));
     }
 
     builder.addFilters(timeFilterInfoBuilder.build());
   }
 
   private void addNutritionFilters(
-      SidebarInfo.Builder builder, SearchQuery query, UriComponentsBuilder uriBuilder) {
+      SidebarInfo.Builder builder,
+      SearchQuery query,
+      UriComponentsBuilder uriBuilder,
+      FacetData fd) {
     var activeKcal = query.calories().orElse(unselectedRange);
     var activeFat = query.fatContent().orElse(unselectedRange);
     var activeCarbs = query.carbohydrateContent().orElse(unselectedRange);
@@ -97,18 +163,21 @@ class SidebarComponent {
 
     var otherUriBuilder = uriBuilder.cloneBuilder();
     for (var spec : caloriesFilterOptions) {
-      nutritionFilterInfoBuilder.addOptions(spec.buildOption(otherUriBuilder, activeKcal));
+      nutritionFilterInfoBuilder.addOptions(
+          spec.buildOption(otherUriBuilder, activeKcal, countLabelData(fd, spec.queryValue)));
     }
 
     otherUriBuilder = uriBuilder.cloneBuilder();
     for (var spec : fatFilterOptions) {
-      nutritionFilterInfoBuilder.addOptions(spec.buildOption(otherUriBuilder, activeFat));
+      nutritionFilterInfoBuilder.addOptions(
+          spec.buildOption(otherUriBuilder, activeFat, countLabelData(fd, spec.queryValue)));
     }
 
     // NOTE that this uses uriBuilder directly instead of a clone to save a copy
     //      if more options are added this will need to be adjusted
     for (var spec : carbsFilterOptions) {
-      nutritionFilterInfoBuilder.addOptions(spec.buildOption(uriBuilder, activeCarbs));
+      nutritionFilterInfoBuilder.addOptions(
+          spec.buildOption(uriBuilder, activeCarbs, countLabelData(fd, spec.queryValue)));
     }
 
     builder.addFilters(nutritionFilterInfoBuilder.build());
@@ -126,7 +195,6 @@ class SidebarComponent {
     }
 
     FilterOption buildOption(UriComponentsBuilder uriBuilder, SortOrder active) {
-
       var href = uriBuilder.replaceQueryParam("sort", queryValue);
 
       return new FilterInfo.FilterOption.Builder()
@@ -149,7 +217,7 @@ class SidebarComponent {
       this.queryValue = queryValue;
     }
 
-    FilterOption buildOption(UriComponentsBuilder uriBuilder, Set<String> selected) {
+    FilterOption buildOption(UriComponentsBuilder uriBuilder, Set<String> selected, int count) {
       var isActive = selected.contains(queryValue);
 
       var href =
@@ -161,6 +229,7 @@ class SidebarComponent {
 
       return new FilterInfo.FilterOption.Builder()
           .name(name)
+          .count(count)
           .href(href.build().toUriString())
           .isActive(isActive)
           .build();
@@ -183,7 +252,7 @@ class SidebarComponent {
       this.queryValue = String.format("%d,%d", start, end == Integer.MAX_VALUE ? 0 : end);
     }
 
-    FilterOption buildOption(UriComponentsBuilder uriBuilder, RangedSpec selected) {
+    FilterOption buildOption(UriComponentsBuilder uriBuilder, RangedSpec selected, int count) {
       var isActive = selected.start() == start && selected.end() == end;
 
       var href =
@@ -194,6 +263,7 @@ class SidebarComponent {
       return new FilterInfo.FilterOption.Builder()
           .name(name)
           .isActive(isActive)
+          .count(count)
           .href(href.build().toUriString())
           .build();
     }
