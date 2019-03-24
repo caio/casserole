@@ -1,5 +1,6 @@
 package co.caio.loader;
 
+import co.caio.casserole.Sidebar;
 import co.caio.cerberus.db.ChronicleRecipeMetadataDatabase;
 import co.caio.cerberus.db.FlatBufferSerializer;
 import co.caio.cerberus.db.RecipeMetadata;
@@ -76,7 +77,12 @@ public class Loader implements Runnable {
 
   void buildLucene() {
     System.out.println("Initializing index at " + lucenePath);
-    var indexer = new Indexer.Builder().dataDirectory(lucenePath).createMode().build();
+    var indexer =
+        new Indexer.Builder()
+            .categoryExtractor(new Sidebar().getCategoryExtractor())
+            .dataDirectory(lucenePath)
+            .createMode()
+            .build();
 
     System.out.println("Ingesting all recipes. This will take a while...");
     recipeStream()
