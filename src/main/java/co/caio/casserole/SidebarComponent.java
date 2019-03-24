@@ -1,7 +1,6 @@
 package co.caio.casserole;
 
-import co.caio.cerberus.model.Diet;
-import co.caio.cerberus.model.FacetData;
+import co.caio.casserole.Sidebar.Category;
 import co.caio.cerberus.model.FacetData.LabelData;
 import co.caio.cerberus.model.SearchQuery;
 import co.caio.cerberus.model.SearchQuery.RangedSpec;
@@ -11,7 +10,6 @@ import co.caio.tablier.model.FilterInfo;
 import co.caio.tablier.model.FilterInfo.FilterOption;
 import co.caio.tablier.model.SidebarInfo;
 import java.util.List;
-import java.util.Set;
 import org.springframework.web.util.UriComponentsBuilder;
 
 class SidebarComponent {
@@ -23,9 +21,50 @@ class SidebarComponent {
   static final String NUTRITION_INFO_NAME = "Limit Nutrition (per serving)";
 
   private static final SearchResult EMPTY_SEARCH_RESULT = new SearchResult.Builder().build();
-  private static final FacetData EMPTY_FACED_DATA =
-      new FacetData.Builder().dimension("EMPTY").build();
   private static final LabelData EMPTY_LABEL_DATA = LabelData.of("EMPTY", 0);
+
+  private static final List<SortOptionSpec> sortOptions =
+      List.of(
+          new SortOptionSpec("Relevance", SortOrder.RELEVANCE),
+          new SortOptionSpec("Fastest to Cook", SortOrder.TOTAL_TIME),
+          new SortOptionSpec("Least Ingredients", SortOrder.NUM_INGREDIENTS),
+          new SortOptionSpec("Calories", SortOrder.CALORIES));
+
+  // XXX Should SortOrder be a StringEnum? Maybe client-based also?
+  //     One too many raw strings here
+  private static final List<DietOptionSpec> dietFilterOptions =
+      List.of(
+          new DietOptionSpec("Low Carb", "lowcarb"),
+          new DietOptionSpec("Vegetarian", "vegetarian"),
+          new DietOptionSpec("Keto", "keto"),
+          new DietOptionSpec("Paleo", "paleo"));
+
+  // TODO Figure out how to share all these Range(X,Y) with Sidebar extractors
+  private static final List<NumIngredientOptionSpec> ingredientFilterOptions =
+      List.of(
+          new NumIngredientOptionSpec("Up to 5", new Range(0, 5)),
+          new NumIngredientOptionSpec("From 6 to 10", new Range(6, 10)),
+          new NumIngredientOptionSpec("More than 10", new Range(11, Integer.MAX_VALUE)));
+
+  private static final List<TotalTimeOptionSpec> totalTimeFilterOptions =
+      List.of(
+          new TotalTimeOptionSpec("Up to 15 minutes", new Range(0, 15)),
+          new TotalTimeOptionSpec("From 15 to 30 minutes", new Range(15, 30)),
+          new TotalTimeOptionSpec("From 30 to 60 minutes", new Range(30, 60)),
+          new TotalTimeOptionSpec("One hour or more", new Range(60, Integer.MAX_VALUE)));
+
+  private static final List<CaloriesOptionSpec> caloriesFilterOptions =
+      List.of(
+          new CaloriesOptionSpec("Up to 200 kcal", new Range(0, 200)),
+          new CaloriesOptionSpec("Up to 500 kcal", new Range(0, 500)));
+
+  private static final List<FatContentOptionSpec> fatFilterOptions =
+      List.of(new FatContentOptionSpec("Up to 10g of Fat", new Range(0, 10)));
+
+  private static final List<CarbContentOptionSpec> carbsFilterOptions =
+      List.of(new CarbContentOptionSpec("Up to 30g of Carbs", new Range(0, 30)));
+
+  private static final RangedSpec unselectedRange = RangedSpec.of(0, 0);
 
   SidebarComponent() {}
 
@@ -37,40 +76,27 @@ class SidebarComponent {
     var builder = new SidebarInfo.Builder();
 
     addSortOptions(builder, query, uriBuilder.cloneBuilder());
-    addDietFilters(builder, query, uriBuilder.cloneBuilder(), getFacetData(result, "diet"));
-    addIngredientFilters(
-        builder, query, uriBuilder.cloneBuilder(), getFacetData(result, "num_ingredient"));
-    addTotalTimeFilters(
-        builder, query, uriBuilder.cloneBuilder(), getFacetData(result, "total_time"));
-    addNutritionFilters(
-        builder, query, uriBuilder.cloneBuilder(), getFacetData(result, "nutrition"));
+    addDietFilters(builder, query, uriBuilder.cloneBuilder(), result);
+    addIngredientFilters(builder, query, uriBuilder.cloneBuilder(), result);
+    addTotalTimeFilters(builder, query, uriBuilder.cloneBuilder(), result);
+
+    addNutritionFilters(builder, query, uriBuilder.cloneBuilder(), result);
 
     return builder.build();
   }
 
-  // XXX Maybe change the result model to use hashmaps for the label
-  //     data since the order is irrelevant (or rather, the order is
-  //     only important when rendering)
+  // TODO Change the result model to use hashmaps for the label
+  //      data since the order is irrelevant (or rather, the order is
+  //      only important when rendering)
 
-  // TODO expose cerberus.search.IndexField so that I don't need to
-  //      hardcode the key param for getFacetData()
-
-  // TODO figure out how to match LabelData
-
-  private FacetData getFacetData(SearchResult result, String key) {
-    return result
-        .facets()
-        .stream()
-        .filter(m -> m.dimension().equals(key))
-        .findFirst()
-        .orElse(EMPTY_FACED_DATA);
-  }
-
-  private int countLabelData(FacetData fd, String label) {
+  private int countLabelData(SearchResult result, Category category, String label) {
     return (int)
-        fd.children()
+        result
+            .facets()
             .stream()
-            .filter(m -> m.label().equals(label))
+            .filter(m -> m.dimension().equals(category.toString()))
+            .flatMap(fd -> fd.children().stream())
+            .filter(ld -> ld.label().equals(label))
             .findFirst()
             .orElse(EMPTY_LABEL_DATA)
             .count();
@@ -92,7 +118,8 @@ class SidebarComponent {
       SidebarInfo.Builder builder,
       SearchQuery query,
       UriComponentsBuilder uriBuilder,
-      FacetData fd) {
+      SearchResult result) {
+
     var selectedDiets = query.dietThreshold().keySet();
 
     if (selectedDiets.size() > 1) {
@@ -101,13 +128,14 @@ class SidebarComponent {
 
     var dietsFilterInfoBuilder = new FilterInfo.Builder().name(DIETS_INFO_NAME);
 
-    if (!fd.children().isEmpty()) {
-      dietsFilterInfoBuilder.showCounts(true);
-    }
+    dietsFilterInfoBuilder.showCounts(!result.facets().isEmpty());
+
+    var selected = selectedDiets.isEmpty() ? null : selectedDiets.iterator().next();
 
     for (var spec : dietFilterOptions) {
       dietsFilterInfoBuilder.addOptions(
-          spec.buildOption(uriBuilder, selectedDiets, countLabelData(fd, spec.queryValue)));
+          spec.buildOption(
+              uriBuilder, selected, countLabelData(result, Category.DIET, spec.queryValue)));
     }
 
     builder.addFilters(dietsFilterInfoBuilder.build());
@@ -117,18 +145,19 @@ class SidebarComponent {
       SidebarInfo.Builder builder,
       SearchQuery query,
       UriComponentsBuilder uriBuilder,
-      FacetData fd) {
+      SearchResult result) {
     var activeIng = query.numIngredients().orElse(unselectedRange);
 
     var ingredientsFilterInfoBuilder = new FilterInfo.Builder().name(INGREDIENTS_INFO_NAME);
 
-    if (!fd.children().isEmpty()) {
-      ingredientsFilterInfoBuilder.showCounts(true);
-    }
+    ingredientsFilterInfoBuilder.showCounts(!result.facets().isEmpty());
 
     for (var spec : ingredientFilterOptions) {
       ingredientsFilterInfoBuilder.addOptions(
-          spec.buildOption(uriBuilder, activeIng, countLabelData(fd, spec.queryValue)));
+          spec.buildOption(
+              uriBuilder,
+              activeIng,
+              countLabelData(result, Category.NUM_INGREDIENT, spec.queryValue.toString())));
     }
 
     builder.addFilters(ingredientsFilterInfoBuilder.build());
@@ -138,13 +167,18 @@ class SidebarComponent {
       SidebarInfo.Builder builder,
       SearchQuery query,
       UriComponentsBuilder uriBuilder,
-      FacetData fd) {
+      SearchResult result) {
     var activeTT = query.totalTime().orElse(unselectedRange);
     var timeFilterInfoBuilder = new FilterInfo.Builder().name(TIME_INFO_NAME);
 
+    timeFilterInfoBuilder.showCounts(!result.facets().isEmpty());
+
     for (var spec : totalTimeFilterOptions) {
       timeFilterInfoBuilder.addOptions(
-          spec.buildOption(uriBuilder, activeTT, countLabelData(fd, spec.queryValue)));
+          spec.buildOption(
+              uriBuilder,
+              activeTT,
+              countLabelData(result, Category.TOTAL_TIME, spec.queryValue.toString())));
     }
 
     builder.addFilters(timeFilterInfoBuilder.build());
@@ -154,7 +188,7 @@ class SidebarComponent {
       SidebarInfo.Builder builder,
       SearchQuery query,
       UriComponentsBuilder uriBuilder,
-      FacetData fd) {
+      SearchResult result) {
     var activeKcal = query.calories().orElse(unselectedRange);
     var activeFat = query.fatContent().orElse(unselectedRange);
     var activeCarbs = query.carbohydrateContent().orElse(unselectedRange);
@@ -163,165 +197,171 @@ class SidebarComponent {
 
     var otherUriBuilder = uriBuilder.cloneBuilder();
     for (var spec : caloriesFilterOptions) {
-      nutritionFilterInfoBuilder.addOptions(
-          spec.buildOption(otherUriBuilder, activeKcal, countLabelData(fd, spec.queryValue)));
+      var count = countLabelData(result, Category.CALORIES, spec.queryValue.toString());
+      nutritionFilterInfoBuilder.addOptions(spec.buildOption(otherUriBuilder, activeKcal, count));
     }
 
     otherUriBuilder = uriBuilder.cloneBuilder();
     for (var spec : fatFilterOptions) {
-      nutritionFilterInfoBuilder.addOptions(
-          spec.buildOption(otherUriBuilder, activeFat, countLabelData(fd, spec.queryValue)));
+      var count = countLabelData(result, Category.FAT_CONTENT, spec.queryValue.toString());
+      nutritionFilterInfoBuilder.addOptions(spec.buildOption(otherUriBuilder, activeFat, count));
     }
 
     // NOTE that this uses uriBuilder directly instead of a clone to save a copy
     //      if more options are added this will need to be adjusted
     for (var spec : carbsFilterOptions) {
-      nutritionFilterInfoBuilder.addOptions(
-          spec.buildOption(uriBuilder, activeCarbs, countLabelData(fd, spec.queryValue)));
+      var count = countLabelData(result, Category.CARB_CONTENT, spec.queryValue.toString());
+      nutritionFilterInfoBuilder.addOptions(spec.buildOption(uriBuilder, activeCarbs, count));
     }
+
+    nutritionFilterInfoBuilder.showCounts(!result.facets().isEmpty());
 
     builder.addFilters(nutritionFilterInfoBuilder.build());
   }
 
-  static class SortOptionSpec {
-    private final String name;
-    private final SortOrder order;
-    private final String queryValue;
+  abstract static class OptionSpec<N, V> {
+    final String name;
+    final N queryName;
+    final V queryValue;
 
-    SortOptionSpec(String name, SortOrder order, String queryValue) {
+    OptionSpec(String name, N queryName, V queryValue) {
       this.name = name;
-      this.order = order;
+      this.queryName = queryName;
       this.queryValue = queryValue;
+    }
+
+    String getUri(UriComponentsBuilder builder, boolean isActive) {
+      if (isActive) {
+        builder.replaceQueryParam(queryName.toString());
+      } else {
+        builder.replaceQueryParam(queryName.toString(), queryValue.toString());
+      }
+      return builder.build().toUriString();
+    }
+
+    boolean isActive(V selected) {
+      return queryValue.equals(selected);
+    }
+
+    FilterOption buildOption(UriComponentsBuilder uriBuilder, V selected, int count) {
+      var isActive = isActive(selected);
+      return new FilterInfo.FilterOption.Builder()
+          .name(name)
+          .count(count)
+          .href(getUri(uriBuilder, isActive))
+          .isActive(isActive)
+          .build();
+    }
+  }
+
+  static class SortOptionSpec extends OptionSpec<String, SortOrder> {
+
+    SortOptionSpec(String name, SortOrder queryValue) {
+      // XXX should this move to Sidebar?
+      super(name, "sort", queryValue);
     }
 
     FilterOption buildOption(UriComponentsBuilder uriBuilder, SortOrder active) {
-      var href = uriBuilder.replaceQueryParam("sort", queryValue);
+      return super.buildOption(uriBuilder, active, 0);
+    }
 
-      return new FilterInfo.FilterOption.Builder()
-          .name(name)
-          .isActive(active.equals(order))
-          .href(href.build().toUriString())
-          .build();
+    @Override
+    String getUri(UriComponentsBuilder builder, boolean isActive) {
+      // See, this toLowerCase() bothers me
+      return builder
+          .replaceQueryParam("sort", queryValue.name().toLowerCase())
+          .build()
+          .toUriString();
     }
   }
 
-  static class StringOptionSpec {
-
-    private final String name;
-    private final String queryName;
-    private final String queryValue;
-
-    StringOptionSpec(String name, String queryName, String queryValue) {
-      this.name = name;
-      this.queryName = queryName;
-      this.queryValue = queryValue;
+  static class DietOptionSpec extends OptionSpec<Category, String> {
+    DietOptionSpec(String name, String queryValue) {
+      super(name, Category.DIET, queryValue);
     }
 
-    FilterOption buildOption(UriComponentsBuilder uriBuilder, Set<String> selected, int count) {
-      var isActive = selected.contains(queryValue);
-
-      var href =
-          isActive
-              // XXX improve: hardcoded "science" parameter
-              // Make sure the additional parameter is removed as well
-              ? uriBuilder.replaceQueryParam(queryName).replaceQueryParam("science")
-              : uriBuilder.replaceQueryParam(queryName, queryValue);
-
-      return new FilterInfo.FilterOption.Builder()
-          .name(name)
-          .count(count)
-          .href(href.build().toUriString())
-          .isActive(isActive)
-          .build();
+    @Override
+    String getUri(UriComponentsBuilder builder, boolean isActive) {
+      if (isActive) {
+        builder.replaceQueryParam(queryName.toString());
+        builder.replaceQueryParam("science");
+      } else {
+        builder.replaceQueryParam(queryName.toString(), queryValue);
+      }
+      return builder.build().toUriString();
     }
   }
 
-  static class RangeOptionSpec {
+  abstract static class RangeOptionSpec extends OptionSpec<Category, RangedSpec> {
+    RangeOptionSpec(String name, Category queryName, RangedSpec queryValue) {
+      super(name, queryName, queryValue);
+    }
+  }
 
-    private final String name;
-    private final int start;
-    private final int end;
-    private final String queryName;
-    private final String queryValue;
+  static class NumIngredientOptionSpec extends RangeOptionSpec {
+    NumIngredientOptionSpec(String name, RangedSpec queryValue) {
+      super(name, Category.NUM_INGREDIENT, queryValue);
+    }
+  }
 
-    RangeOptionSpec(String name, int start, int end, String queryName) {
-      this.name = name;
+  static class TotalTimeOptionSpec extends RangeOptionSpec {
+    TotalTimeOptionSpec(String name, RangedSpec queryValue) {
+      super(name, Category.TOTAL_TIME, queryValue);
+    }
+  }
+
+  static class CaloriesOptionSpec extends RangeOptionSpec {
+    CaloriesOptionSpec(String name, RangedSpec queryValue) {
+      super(name, Category.CALORIES, queryValue);
+    }
+  }
+
+  static class FatContentOptionSpec extends RangeOptionSpec {
+    FatContentOptionSpec(String name, RangedSpec queryValue) {
+      super(name, Category.FAT_CONTENT, queryValue);
+    }
+  }
+
+  static class CarbContentOptionSpec extends RangeOptionSpec {
+    CarbContentOptionSpec(String name, RangedSpec queryValue) {
+      super(name, Category.CARB_CONTENT, queryValue);
+    }
+  }
+
+  static class Range implements RangedSpec {
+    final int start;
+    final int end;
+
+    Range(int start, int end) {
       this.start = start;
       this.end = end;
-      this.queryName = queryName;
-      this.queryValue = String.format("%d,%d", start, end == Integer.MAX_VALUE ? 0 : end);
     }
 
-    FilterOption buildOption(UriComponentsBuilder uriBuilder, RangedSpec selected, int count) {
-      var isActive = selected.start() == start && selected.end() == end;
+    @Override
+    public boolean equals(Object obj) {
+      // Shouldn't immutables have generated this?
+      if (obj instanceof RangedSpec) {
+        var spec = (RangedSpec) obj;
+        return start == spec.start() && end == spec.end();
+      }
+      return super.equals(obj);
+    }
 
-      var href =
-          isActive
-              ? uriBuilder.replaceQueryParam(queryName)
-              : uriBuilder.replaceQueryParam(queryName, queryValue);
+    @Override
+    public String toString() {
+      // This is how we encode ranges in the parameter parser
+      // TODO join up both implementations so this logic only appears once
+      return start + "," + (end == Integer.MAX_VALUE ? 0 : end);
+    }
 
-      return new FilterInfo.FilterOption.Builder()
-          .name(name)
-          .isActive(isActive)
-          .count(count)
-          .href(href.build().toUriString())
-          .build();
+    @Override
+    public int start() {
+      return start;
+    }
+
+    @Override
+    public int end() {
+      return end;
     }
   }
-
-  static {
-    var sorts =
-        List.of(
-            new SortOptionSpec("Relevance", SortOrder.RELEVANCE, "relevance"),
-            new SortOptionSpec("Fastest to Cook", SortOrder.TOTAL_TIME, "total_time"),
-            new SortOptionSpec("Least Ingredients", SortOrder.NUM_INGREDIENTS, "num_ingredients"),
-            new SortOptionSpec("Calories", SortOrder.CALORIES, "calories"));
-    // Make sure we don't generate URIs with unrecognizable sort order
-    sorts.forEach(o -> SortOrder.valueOf(o.queryValue.toUpperCase()));
-    sortOptions = sorts;
-
-    var diets =
-        List.of(
-            new StringOptionSpec("Low Carb", "diet", "lowcarb"),
-            new StringOptionSpec("Vegetarian", "diet", "vegetarian"),
-            new StringOptionSpec("Keto", "diet", "keto"),
-            new StringOptionSpec("Paleo", "diet", "paleo"));
-
-    // Make sure we don't generate URIs with unrecognizable diet name
-    diets.forEach(
-        d -> {
-          assert (Diet.isKnown(d.queryValue));
-        });
-    dietFilterOptions = diets;
-  }
-
-  private static final List<SortOptionSpec> sortOptions;
-
-  private static final List<StringOptionSpec> dietFilterOptions;
-
-  private static final List<RangeOptionSpec> ingredientFilterOptions =
-      List.of(
-          new RangeOptionSpec("Up to 5", 0, 5, "ni"),
-          new RangeOptionSpec("From 6 to 10", 6, 10, "ni"),
-          new RangeOptionSpec("More than 10", 10, Integer.MAX_VALUE, "ni"));
-
-  private static final List<RangeOptionSpec> totalTimeFilterOptions =
-      List.of(
-          new RangeOptionSpec("Up to 15 minutes", 0, 15, "tt"),
-          new RangeOptionSpec("From 15 to 30 minutes", 15, 30, "tt"),
-          new RangeOptionSpec("From 30 to 60 minutes", 30, 60, "tt"),
-          new RangeOptionSpec("One hour or more", 60, Integer.MAX_VALUE, "tt"));
-
-  private static final List<RangeOptionSpec> caloriesFilterOptions =
-      List.of(
-          new RangeOptionSpec("Up to 200 kcal", 0, 200, "n_k"),
-          new RangeOptionSpec("Up to 500 kcal", 0, 500, "n_k"));
-
-  private static final List<RangeOptionSpec> fatFilterOptions =
-      List.of(new RangeOptionSpec("Up to 10g of Fat", 0, 10, "n_f"));
-
-  private static final List<RangeOptionSpec> carbsFilterOptions =
-      List.of(new RangeOptionSpec("Up to 30g of Carbs", 0, 30, "n_c"));
-
-  private static final RangedSpec unselectedRange = RangedSpec.of(0, 0);
 }
