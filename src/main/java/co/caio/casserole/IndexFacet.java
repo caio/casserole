@@ -169,7 +169,7 @@ public class IndexFacet {
     }
   }
 
-  enum CategoryRange implements CategoryOption {
+  enum CategoryRange implements CategoryOption, RangedSpec {
     // num_ingredients
     FROM_ZERO_TO_FIVE("Up to 5", 0, 5),
     FROM_SIX_TO_TEN("From 6 to 10", 6, 10),
@@ -225,6 +225,16 @@ public class IndexFacet {
     @Override
     public String getIndexKey() {
       return indexKey;
+    }
+
+    @Override
+    public int start() {
+      return start;
+    }
+
+    @Override
+    public int end() {
+      return end;
     }
   }
 

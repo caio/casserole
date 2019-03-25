@@ -3,6 +3,7 @@ package co.caio.casserole;
 import static org.junit.jupiter.api.Assertions.*;
 
 import co.caio.casserole.IndexFacet.Category;
+import co.caio.casserole.IndexFacet.CategoryRange;
 import co.caio.cerberus.model.SearchQuery;
 import co.caio.cerberus.model.SearchQuery.RangedSpec;
 import co.caio.cerberus.model.SearchQuery.SortOrder;
@@ -10,6 +11,7 @@ import co.caio.tablier.model.FilterInfo;
 import co.caio.tablier.model.FilterInfo.FilterOption;
 import co.caio.tablier.model.SidebarInfo;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -71,20 +73,117 @@ class SidebarRendererTest {
   }
 
   @Test
-  void selectedFiltersAreMarkedAsActive() {
-    // Right now there isn't a way to know which RangedSpecs are implemented
-    // in the sidebar so these RangedSpec.of() calls are hardcoded. Not sure
-    // if I care enough to make this more programmable as there's only value
-    // for this particular test now
+  void singleFilterSelection() {
+    Category.DIET
+        .getOptions()
+        .forEach(
+            option -> {
+              var query =
+                  new SearchQuery.Builder()
+                      .fulltext("*")
+                      .addMatchDiet(option.getIndexKey())
+                      .build();
+              var sidebar = SIDEBAR_RENDERER.render(query, uriBuilder);
+              var info = findFilterInfo(sidebar, Category.DIET.getTitle());
+              var activeItems = findActive(info);
+              assertEquals(1, activeItems.size());
+              assertEquals(option.getTitle(), activeItems.get(0).name());
+            });
+
+    Category.NUM_INGREDIENT
+        .getOptions()
+        .forEach(
+            option -> {
+              var query =
+                  new SearchQuery.Builder()
+                      .fulltext("*")
+                      .numIngredients((CategoryRange) option)
+                      .build();
+              var sidebar = SIDEBAR_RENDERER.render(query, uriBuilder);
+              var info = findFilterInfo(sidebar, Category.NUM_INGREDIENT.getTitle());
+              var activeItems = findActive(info);
+              assertEquals(1, activeItems.size());
+              assertEquals(option.getTitle(), activeItems.get(0).name());
+            });
+
+    Category.TOTAL_TIME
+        .getOptions()
+        .forEach(
+            option -> {
+              var query =
+                  new SearchQuery.Builder().fulltext("*").totalTime((CategoryRange) option).build();
+              var sidebar = SIDEBAR_RENDERER.render(query, uriBuilder);
+              var info = findFilterInfo(sidebar, Category.TOTAL_TIME.getTitle());
+              var activeItems = findActive(info);
+              assertEquals(1, activeItems.size());
+              assertEquals(option.getTitle(), activeItems.get(0).name());
+            });
+
+    Category.CALORIES
+        .getOptions()
+        .forEach(
+            option -> {
+              var query =
+                  new SearchQuery.Builder().fulltext("*").calories((CategoryRange) option).build();
+              var sidebar = SIDEBAR_RENDERER.render(query, uriBuilder);
+              var info = findFilterInfo(sidebar, SidebarRenderer.NUTRITION_INFO_NAME);
+              var activeItems = findActive(info);
+              assertEquals(1, activeItems.size());
+              assertEquals(option.getTitle(), activeItems.get(0).name());
+            });
+
+    Category.FAT_CONTENT
+        .getOptions()
+        .forEach(
+            option -> {
+              var query =
+                  new SearchQuery.Builder()
+                      .fulltext("*")
+                      .fatContent((CategoryRange) option)
+                      .build();
+              var sidebar = SIDEBAR_RENDERER.render(query, uriBuilder);
+              var info = findFilterInfo(sidebar, SidebarRenderer.NUTRITION_INFO_NAME);
+              var activeItems = findActive(info);
+              assertEquals(1, activeItems.size());
+              assertEquals(option.getTitle(), activeItems.get(0).name());
+            });
+
+    Category.CARB_CONTENT
+        .getOptions()
+        .forEach(
+            option -> {
+              var query =
+                  new SearchQuery.Builder()
+                      .fulltext("*")
+                      .carbohydrateContent((CategoryRange) option)
+                      .build();
+              var sidebar = SIDEBAR_RENDERER.render(query, uriBuilder);
+              var info = findFilterInfo(sidebar, SidebarRenderer.NUTRITION_INFO_NAME);
+              var activeItems = findActive(info);
+              assertEquals(1, activeItems.size());
+              assertEquals(option.getTitle(), activeItems.get(0).name());
+            });
+  }
+
+  @Test
+  void multipleFilterSelection() {
+    // Pick the first from each category, select them all
+    var ni = (CategoryRange) Category.NUM_INGREDIENT.getOptions().get(0);
+    var tt = (CategoryRange) Category.TOTAL_TIME.getOptions().get(0);
+    var nk = (CategoryRange) Category.CALORIES.getOptions().get(0);
+    var nf = (CategoryRange) Category.FAT_CONTENT.getOptions().get(0);
+    var nc = (CategoryRange) Category.CARB_CONTENT.getOptions().get(0);
+    var diet = Category.DIET.getOptions().get(0);
+
     var query =
         new SearchQuery.Builder()
             .fulltext("ignored")
-            .numIngredients(RangedSpec.of(0, 5))
-            .totalTime(RangedSpec.of(15, 30))
-            .calories(RangedSpec.of(0, 200))
-            .fatContent(RangedSpec.of(0, 10))
-            .carbohydrateContent(RangedSpec.of(0, 30))
-            .addMatchDiet("keto")
+            .numIngredients(ni)
+            .totalTime(tt)
+            .calories(nk)
+            .fatContent(nf)
+            .carbohydrateContent(nc)
+            .addMatchDiet(diet.getIndexKey())
             .build();
 
     var sidebar = SIDEBAR_RENDERER.render(query, uriBuilder);
@@ -92,21 +191,23 @@ class SidebarRendererTest {
     var ingredientInfo = findFilterInfo(sidebar, Category.NUM_INGREDIENT.getTitle());
     var activeIngredients = findActive(ingredientInfo);
     assertEquals(1, activeIngredients.size());
-    assertTrue(activeIngredients.get(0).name().endsWith("to 5"));
+    assertEquals(ni.getTitle(), activeIngredients.get(0).name());
 
     var totalTimeInfo = findFilterInfo(sidebar, Category.TOTAL_TIME.getTitle());
     var activeTimes = findActive(totalTimeInfo);
     assertEquals(1, activeTimes.size());
-    assertTrue(activeTimes.get(0).name().endsWith("15 to 30 minutes"));
+    assertEquals(tt.getTitle(), activeTimes.get(0).name());
 
     var dietInfo = findFilterInfo(sidebar, Category.DIET.getTitle());
     var activeDiets = findActive(dietInfo);
     assertEquals(1, activeDiets.size());
-    assertEquals("Keto", activeDiets.get(0).name());
+    assertEquals(diet.getTitle(), activeDiets.get(0).name());
 
+    // Nutrition category allows multiple selection
     var nutritionInfo = findFilterInfo(sidebar, SidebarRenderer.NUTRITION_INFO_NAME);
-    var activeNutritionList = findActive(nutritionInfo);
-    assertEquals(3, activeNutritionList.size());
+    var activeNutrition =
+        findActive(nutritionInfo).stream().map(FilterOption::name).collect(Collectors.toSet());
+    assertEquals(Set.of(nk.getTitle(), nf.getTitle(), nc.getTitle()), activeNutrition);
   }
 
   @Test
