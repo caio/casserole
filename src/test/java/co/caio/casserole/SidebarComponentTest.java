@@ -2,6 +2,7 @@ package co.caio.casserole;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import co.caio.casserole.Sidebar.Category;
 import co.caio.cerberus.model.SearchQuery;
 import co.caio.cerberus.model.SearchQuery.RangedSpec;
 import co.caio.cerberus.model.SearchQuery.SortOrder;
@@ -30,7 +31,7 @@ class SidebarComponentTest {
   void sortOptionsCantBeRemovedAndDonNotHaveCounts() {
     var query = new SearchQuery.Builder().fulltext("pecan").build();
     var sidebar = sidebarComponent.build(query, uriBuilder);
-    var sorts = findFilterInfo(sidebar, SidebarComponent.SORT_INFO_NAME);
+    var sorts = findFilterInfo(sidebar, Category.SORT.getTitle());
 
     assertFalse(sorts.isRemovable());
     assertFalse(sorts.showCounts());
@@ -38,21 +39,35 @@ class SidebarComponentTest {
 
   @Test
   void selectedSortIsMarkedAsActive() {
+    int numIterations = 0;
+
+    // XXX This is super weird now
     for (SortOrder order : SortOrder.values()) {
+      // Only use options that are exposed
+      var opt = Category.SORT.getOptions().stream().filter(o -> o.isActive(order)).findFirst();
+
+      if (opt.isEmpty()) {
+        continue;
+      }
+
+      var indexedOption = opt.get();
+      numIterations++;
+
       var query = new SearchQuery.Builder().fulltext("ignored").sort(order).build();
       var info =
-          findFilterInfo(
-              sidebarComponent.build(query, uriBuilder), SidebarComponent.SORT_INFO_NAME);
+          findFilterInfo(sidebarComponent.build(query, uriBuilder), Category.SORT.getTitle());
 
-      info.options()
-          .forEach(
-              fo -> {
-                var sortParam = getQueryParams(fo.href()).getFirst("sort");
-                if (paramParser.parseSortOrder(sortParam).equals(order)) {
-                  assertTrue(fo.isActive(), fo.toString());
-                }
-              });
+      var numSelected =
+          info.options()
+              .stream()
+              .filter(FilterOption::isActive)
+              .peek(fo -> assertEquals(indexedOption.getTitle(), fo.name()))
+              .count();
+
+      assertEquals(1, numSelected);
     }
+
+    assertEquals(Category.SORT.getOptions().size(), numIterations);
   }
 
   @Test
@@ -74,17 +89,17 @@ class SidebarComponentTest {
 
     var sidebar = sidebarComponent.build(query, uriBuilder);
 
-    var ingredientInfo = findFilterInfo(sidebar, SidebarComponent.INGREDIENTS_INFO_NAME);
+    var ingredientInfo = findFilterInfo(sidebar, Category.NUM_INGREDIENT.getTitle());
     var activeIngredients = findActive(ingredientInfo);
     assertEquals(1, activeIngredients.size());
     assertTrue(activeIngredients.get(0).name().endsWith("to 5"));
 
-    var totalTimeInfo = findFilterInfo(sidebar, SidebarComponent.TIME_INFO_NAME);
+    var totalTimeInfo = findFilterInfo(sidebar, Category.TOTAL_TIME.getTitle());
     var activeTimes = findActive(totalTimeInfo);
     assertEquals(1, activeTimes.size());
     assertTrue(activeTimes.get(0).name().endsWith("15 to 30 minutes"));
 
-    var dietInfo = findFilterInfo(sidebar, SidebarComponent.DIETS_INFO_NAME);
+    var dietInfo = findFilterInfo(sidebar, Category.DIET.getTitle());
     var activeDiets = findActive(dietInfo);
     assertEquals(1, activeDiets.size());
     assertEquals("Keto", activeDiets.get(0).name());
@@ -95,23 +110,12 @@ class SidebarComponentTest {
   }
 
   @Test
-  void cantRenderMultipleSelectedDiets() {
-    var query =
-        new SearchQuery.Builder()
-            .fulltext("ignored")
-            .addMatchDiet("keto")
-            .addMatchDiet("paleo")
-            .build();
-    assertThrows(IllegalStateException.class, () -> sidebarComponent.build(query, uriBuilder));
-  }
-
-  @Test
   void removingSelectedDietAlsoRemovesScience() {
     var query = new SearchQuery.Builder().fulltext("peanut").putDietThreshold("keto", 0.8f).build();
     var uriBuilder = UriComponentsBuilder.fromUriString("/test?diet=keto&science=0.8");
     var sidebar = sidebarComponent.build(query, uriBuilder);
 
-    var dietInfo = findFilterInfo(sidebar, SidebarComponent.DIETS_INFO_NAME);
+    var dietInfo = findFilterInfo(sidebar, Category.DIET.getTitle());
     var active = findActive(dietInfo);
     assertEquals(1, active.size());
 
@@ -124,7 +128,7 @@ class SidebarComponentTest {
     var query =
         new SearchQuery.Builder().fulltext("ignored").totalTime(RangedSpec.of(30, 60)).build();
     var sidebar = sidebarComponent.build(query, uriBuilder);
-    var totalTimeInfo = findFilterInfo(sidebar, SidebarComponent.TIME_INFO_NAME);
+    var totalTimeInfo = findFilterInfo(sidebar, Category.TOTAL_TIME.getTitle());
     var activeTimes = findActive(totalTimeInfo);
     assertEquals(1, activeTimes.size());
     assertEquals("From 30 to 60 minutes", activeTimes.get(0).name());
@@ -145,7 +149,6 @@ class SidebarComponentTest {
                     .forEach(
                         fo -> {
                           var params = getQueryParams(fo.href());
-                          assertEquals(2, params.size());
                           assertEquals("preserve", params.getFirst("must"));
                         }));
   }
@@ -158,13 +161,15 @@ class SidebarComponentTest {
 
     sidebar
         .filters()
+        .stream()
+        .filter(FilterInfo::isRemovable)
         .forEach(
             fi ->
                 fi.options()
                     .forEach(
                         fo -> {
                           var params = getQueryParams(fo.href());
-                          if (fi.name().equals(SidebarComponent.INGREDIENTS_INFO_NAME)) {
+                          if (fi.name().equals(Category.NUM_INGREDIENT.getTitle())) {
                             assertEquals(1, params.size());
                             assertNotEquals("10,42", params.getFirst("ni"));
                           } else {
