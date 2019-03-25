@@ -9,7 +9,12 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class Sidebar {
+public class IndexFacet {
+
+  // XXX I'm not super happy with Category and CategoryOption having
+  //     the concept of a title since this is only useful for the
+  //     renderer, but moving it there makes things a bit awkward
+  //     so... fix me maybe?
 
   private final CategoryExtractor categoryExtractor;
 
@@ -76,7 +81,7 @@ public class Sidebar {
     return categoryExtractor;
   }
 
-  public Sidebar() {
+  public IndexFacet() {
     var builder = new CategoryExtractor.Builder();
 
     // NOTE that Category.SORT is not added: there's nothing to index

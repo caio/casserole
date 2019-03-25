@@ -1,7 +1,7 @@
 package co.caio.casserole;
 
-import co.caio.casserole.Sidebar.Category;
-import co.caio.casserole.Sidebar.CategoryOption;
+import co.caio.casserole.IndexFacet.Category;
+import co.caio.casserole.IndexFacet.CategoryOption;
 import co.caio.cerberus.model.FacetData.LabelData;
 import co.caio.cerberus.model.SearchQuery;
 import co.caio.cerberus.model.SearchQuery.RangedSpec;

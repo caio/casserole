@@ -1,6 +1,6 @@
 package co.caio.loader;
 
-import co.caio.casserole.Sidebar;
+import co.caio.casserole.IndexFacet;
 import co.caio.cerberus.db.ChronicleRecipeMetadataDatabase;
 import co.caio.cerberus.db.FlatBufferSerializer;
 import co.caio.cerberus.db.RecipeMetadata;
@@ -79,7 +79,7 @@ public class Loader implements Runnable {
     System.out.println("Initializing index at " + lucenePath);
     var indexer =
         new Indexer.Builder()
-            .categoryExtractor(new Sidebar().getCategoryExtractor())
+            .categoryExtractor(new IndexFacet().getCategoryExtractor())
             .dataDirectory(lucenePath)
             .createMode()
             .build();
