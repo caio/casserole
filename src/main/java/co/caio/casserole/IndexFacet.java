@@ -191,10 +191,10 @@ public class IndexFacet {
     // carbohydrates
     FROM_ZERO_TO_THIRTY("Up to 30g of Carbs", 0, 30);
 
-    final String title;
-    final int start;
-    final int end;
-    final String indexKey;
+    private final String title;
+    private final int start;
+    private final int end;
+    private final String indexKey;
 
     CategoryRange(String title, int start, int end) {
       this.title = title;
@@ -228,7 +228,7 @@ public class IndexFacet {
     }
   }
 
-  private Set<String> extractRangeLabels(Category category, double value) {
+  Set<String> extractRangeLabels(Category category, double value) {
     return category
         .getOptions()
         .stream()
@@ -237,11 +237,11 @@ public class IndexFacet {
         .collect(Collectors.toSet());
   }
 
-  Set<String> extractNumIngredient(Recipe r) {
+  private Set<String> extractNumIngredient(Recipe r) {
     return extractRangeLabels(Category.NUM_INGREDIENT, r.ingredients().size());
   }
 
-  Set<String> extractTotalTime(Recipe r) {
+  private Set<String> extractTotalTime(Recipe r) {
     if (r.totalTime().isEmpty()) {
       return Set.of();
     }
@@ -249,7 +249,7 @@ public class IndexFacet {
     return extractRangeLabels(Category.TOTAL_TIME, r.totalTime().getAsInt());
   }
 
-  Set<String> extractCalories(Recipe r) {
+  private Set<String> extractCalories(Recipe r) {
     if (r.calories().isEmpty()) {
       return Set.of();
     }
@@ -257,7 +257,7 @@ public class IndexFacet {
     return extractRangeLabels(Category.CALORIES, r.calories().getAsInt());
   }
 
-  Set<String> extractFatContent(Recipe r) {
+  private Set<String> extractFatContent(Recipe r) {
     if (r.fatContent().isEmpty()) {
       return Set.of();
     }
@@ -265,7 +265,7 @@ public class IndexFacet {
     return extractRangeLabels(Category.FAT_CONTENT, r.fatContent().getAsDouble());
   }
 
-  Set<String> extractCarbContent(Recipe r) {
+  private Set<String> extractCarbContent(Recipe r) {
     if (r.carbohydrateContent().isEmpty()) {
       return Set.of();
     }
