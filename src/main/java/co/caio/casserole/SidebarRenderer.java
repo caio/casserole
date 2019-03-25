@@ -11,7 +11,7 @@ import co.caio.tablier.model.SidebarInfo;
 import java.util.Map.Entry;
 import org.springframework.web.util.UriComponentsBuilder;
 
-class SidebarComponent {
+class SidebarRenderer {
 
   static final String NUTRITION_INFO_NAME = "Limit Nutrition (per serving)";
 
@@ -19,13 +19,13 @@ class SidebarComponent {
   private static final LabelData EMPTY_LABEL_DATA = LabelData.of("EMPTY", 0);
   private static final RangedSpec UNSELECTED_RANGE = RangedSpec.of(0, 0);
 
-  SidebarComponent() {}
+  SidebarRenderer() {}
 
-  SidebarInfo build(SearchQuery query, UriComponentsBuilder uriBuilder) {
-    return build(query, EMPTY_SEARCH_RESULT, uriBuilder);
+  SidebarInfo render(SearchQuery query, UriComponentsBuilder uriBuilder) {
+    return render(query, EMPTY_SEARCH_RESULT, uriBuilder);
   }
 
-  SidebarInfo build(SearchQuery query, SearchResult result, UriComponentsBuilder uriBuilder) {
+  SidebarInfo render(SearchQuery query, SearchResult result, UriComponentsBuilder uriBuilder) {
     var builder = new SidebarInfo.Builder();
 
     var sort = new FilterInfo.Builder().name(Category.SORT.getTitle()).isRemovable(false);

@@ -16,9 +16,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.util.UriComponentsBuilder;
 
-class SidebarComponentTest {
+class SidebarRendererTest {
 
-  private static final SidebarComponent sidebarComponent = new SidebarComponent();
+  private static final SidebarRenderer SIDEBAR_RENDERER = new SidebarRenderer();
   private static final SearchParameterParser paramParser = new SearchParameterParser(20);
   private UriComponentsBuilder uriBuilder;
 
@@ -30,7 +30,7 @@ class SidebarComponentTest {
   @Test
   void sortOptionsCantBeRemovedAndDonNotHaveCounts() {
     var query = new SearchQuery.Builder().fulltext("pecan").build();
-    var sidebar = sidebarComponent.build(query, uriBuilder);
+    var sidebar = SIDEBAR_RENDERER.render(query, uriBuilder);
     var sorts = findFilterInfo(sidebar, Category.SORT.getTitle());
 
     assertFalse(sorts.isRemovable());
@@ -55,7 +55,7 @@ class SidebarComponentTest {
 
       var query = new SearchQuery.Builder().fulltext("ignored").sort(order).build();
       var info =
-          findFilterInfo(sidebarComponent.build(query, uriBuilder), Category.SORT.getTitle());
+          findFilterInfo(SIDEBAR_RENDERER.render(query, uriBuilder), Category.SORT.getTitle());
 
       var numSelected =
           info.options()
@@ -87,7 +87,7 @@ class SidebarComponentTest {
             .addMatchDiet("keto")
             .build();
 
-    var sidebar = sidebarComponent.build(query, uriBuilder);
+    var sidebar = SIDEBAR_RENDERER.render(query, uriBuilder);
 
     var ingredientInfo = findFilterInfo(sidebar, Category.NUM_INGREDIENT.getTitle());
     var activeIngredients = findActive(ingredientInfo);
@@ -104,7 +104,7 @@ class SidebarComponentTest {
     assertEquals(1, activeDiets.size());
     assertEquals("Keto", activeDiets.get(0).name());
 
-    var nutritionInfo = findFilterInfo(sidebar, SidebarComponent.NUTRITION_INFO_NAME);
+    var nutritionInfo = findFilterInfo(sidebar, SidebarRenderer.NUTRITION_INFO_NAME);
     var activeNutritionList = findActive(nutritionInfo);
     assertEquals(3, activeNutritionList.size());
   }
@@ -113,7 +113,7 @@ class SidebarComponentTest {
   void removingSelectedDietAlsoRemovesScience() {
     var query = new SearchQuery.Builder().fulltext("peanut").putDietThreshold("keto", 0.8f).build();
     var uriBuilder = UriComponentsBuilder.fromUriString("/test?diet=keto&science=0.8");
-    var sidebar = sidebarComponent.build(query, uriBuilder);
+    var sidebar = SIDEBAR_RENDERER.render(query, uriBuilder);
 
     var dietInfo = findFilterInfo(sidebar, Category.DIET.getTitle());
     var active = findActive(dietInfo);
@@ -127,7 +127,7 @@ class SidebarComponentTest {
   void activeFilterHrefRemovesFilterParam() {
     var query =
         new SearchQuery.Builder().fulltext("ignored").totalTime(RangedSpec.of(30, 60)).build();
-    var sidebar = sidebarComponent.build(query, uriBuilder);
+    var sidebar = SIDEBAR_RENDERER.render(query, uriBuilder);
     var totalTimeInfo = findFilterInfo(sidebar, Category.TOTAL_TIME.getTitle());
     var activeTimes = findActive(totalTimeInfo);
     assertEquals(1, activeTimes.size());
@@ -139,7 +139,7 @@ class SidebarComponentTest {
   void originalParametersArePreserved() {
     var query = new SearchQuery.Builder().fulltext("ignored").build();
     var ub = UriComponentsBuilder.fromUriString("/test?must=preserve");
-    var sidebar = sidebarComponent.build(query, ub);
+    var sidebar = SIDEBAR_RENDERER.render(query, ub);
 
     sidebar
         .filters()
@@ -157,7 +157,7 @@ class SidebarComponentTest {
   void sameFilterCategoryGetsReplacedDifferentCategoryGetsAppended() {
     var query = new SearchQuery.Builder().fulltext("ignored").build();
     var ub = UriComponentsBuilder.fromUriString("/test?ni=10,42");
-    var sidebar = sidebarComponent.build(query, ub);
+    var sidebar = SIDEBAR_RENDERER.render(query, ub);
 
     sidebar
         .filters()
@@ -199,9 +199,9 @@ class SidebarComponentTest {
   @Test
   void nutritionFilterDoesNotPoisonURIs() {
     var query = new SearchQuery.Builder().fulltext("ignored").build();
-    var sidebar = sidebarComponent.build(query, uriBuilder);
+    var sidebar = SIDEBAR_RENDERER.render(query, uriBuilder);
 
-    var nutritionFilters = findFilterInfo(sidebar, SidebarComponent.NUTRITION_INFO_NAME);
+    var nutritionFilters = findFilterInfo(sidebar, SidebarRenderer.NUTRITION_INFO_NAME);
 
     // Generated uris should only have one query parameter
     nutritionFilters

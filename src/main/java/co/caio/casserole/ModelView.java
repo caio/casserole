@@ -46,7 +46,7 @@ class ModelView {
   private final int numRecipes;
   private final RecipeMetadataDatabase db;
   private final CircuitBreaker breaker;
-  private final SidebarComponent sidebarComponent = new SidebarComponent();
+  private final SidebarRenderer sidebarRenderer = new SidebarRenderer();
 
   ModelView(
       @Qualifier("searchPageSize") int pageSize,
@@ -109,7 +109,7 @@ class ModelView {
 
     // Sidebar links always lead to the first page
     uriBuilder.replaceQueryParam("page");
-    searchBuilder.sidebar(sidebarComponent.build(query, result, uriBuilder));
+    searchBuilder.sidebar(sidebarRenderer.render(query, result, uriBuilder));
 
     searchBuilder.numAppliedFilters(deriveAppliedFilters(query));
 
