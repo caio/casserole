@@ -19,7 +19,7 @@ class SearchParameterParserTest {
   @Test
   void buildQuery() {
     var input = new HashMap<String, String>();
-    var builder = new SearchQuery.Builder().maxResults(pageSize);
+    var builder = new SearchQuery.Builder().maxResults(pageSize).maxFacets(5);
 
     input.put("q", "oil");
     assertEquals(parser.buildQuery(input), builder.fulltext("oil").build());

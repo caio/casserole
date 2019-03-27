@@ -27,7 +27,7 @@ class SearchParameterParser {
   }
 
   private SearchQuery _buildQuery(Map<String, String> params) {
-    var builder = new SearchQuery.Builder().maxResults(pageSize);
+    var builder = new SearchQuery.Builder().maxResults(pageSize).maxFacets(5);
 
     var fulltext = params.getOrDefault("q", "").strip();
 
