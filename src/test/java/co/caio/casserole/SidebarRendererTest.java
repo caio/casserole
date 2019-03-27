@@ -4,13 +4,17 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import co.caio.casserole.IndexFacet.Category;
 import co.caio.casserole.IndexFacet.CategoryRange;
+import co.caio.cerberus.model.FacetData;
 import co.caio.cerberus.model.SearchQuery;
 import co.caio.cerberus.model.SearchQuery.RangedSpec;
 import co.caio.cerberus.model.SearchQuery.SortOrder;
+import co.caio.cerberus.model.SearchResult;
 import co.caio.tablier.model.FilterInfo;
 import co.caio.tablier.model.FilterInfo.FilterOption;
 import co.caio.tablier.model.SidebarInfo;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
@@ -70,6 +74,46 @@ class SidebarRendererTest {
     }
 
     assertEquals(Category.SORT.getOptions().size(), numIterations);
+  }
+
+  @Test
+  void resultDataIsUsed() {
+    var cat = Category.DIET;
+
+    var unusedQuery = new SearchQuery.Builder().fulltext("*").build();
+    var facetDataBuilder = new FacetData.Builder().dimension(cat.getIndexKey());
+
+    // Assemble a facet data with random counts for every
+    // option for this category and record it in a map so that
+    // we can compare with the rendered result
+    var wantedCounts = new HashMap<String, Integer>();
+    var random = new Random();
+    cat.getOptions()
+        .forEach(
+            opt -> {
+              var count = random.nextInt(100) + 1;
+              facetDataBuilder.addChild(opt.getIndexKey(), count);
+              wantedCounts.put(opt.getTitle(), count);
+            });
+
+    var result =
+        new SearchResult.Builder()
+            .addRecipe(1)
+            .totalHits(1)
+            .addFacets(facetDataBuilder.build())
+            .build();
+
+    var rendered = SIDEBAR_RENDERER.render(unusedQuery, result, uriBuilder);
+
+    var info = findFilterInfo(rendered, cat.getTitle());
+
+    assertTrue(info.showCounts());
+
+    info.options()
+        .forEach(
+            fo -> {
+              assertEquals((int) wantedCounts.get(fo.name()), fo.count());
+            });
   }
 
   @Test
