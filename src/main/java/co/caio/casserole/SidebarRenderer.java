@@ -33,9 +33,9 @@ class SidebarRenderer {
     addCategoryOptions(sort, Category.SORT, query.sort(), result, uriBuilder);
     builder.addFilters(sort.build());
 
-    var showCounts = !result.facets().isEmpty();
+    var hasFacetData = !result.facets().isEmpty();
 
-    var diet = new FilterInfo.Builder().name(Category.DIET.getTitle()).showCounts(showCounts);
+    var diet = new FilterInfo.Builder().name(Category.DIET.getTitle());
     var selectedDiet =
         query
             .dietThreshold()
@@ -47,32 +47,33 @@ class SidebarRenderer {
             //      we end up breaking the render when using &science=
             .filter(e -> e.getValue() > 0f)
             .map(Entry::getKey)
-            .findFirst()
-            .orElse("NONE");
-    addCategoryOptions(diet, Category.DIET, selectedDiet, result, uriBuilder);
+            .findFirst();
+    addCategoryOptions(diet, Category.DIET, selectedDiet.orElse("NONE"), result, uriBuilder);
+    diet.showCounts(hasFacetData && selectedDiet.isEmpty());
     builder.addFilters(diet.build());
 
-    var numIngredient =
-        new FilterInfo.Builder().name(Category.NUM_INGREDIENT.getTitle()).showCounts(showCounts);
+    var numIngredient = new FilterInfo.Builder().name(Category.NUM_INGREDIENT.getTitle());
     addCategoryOptions(
         numIngredient,
         Category.NUM_INGREDIENT,
         query.numIngredients().orElse(UNSELECTED_RANGE),
         result,
         uriBuilder);
+    numIngredient.showCounts(hasFacetData && query.numIngredients().isEmpty());
     builder.addFilters(numIngredient.build());
 
     var totalTime =
-        new FilterInfo.Builder().name(Category.TOTAL_TIME.getTitle()).showCounts(showCounts);
+        new FilterInfo.Builder().name(Category.TOTAL_TIME.getTitle()).showCounts(hasFacetData);
     addCategoryOptions(
         totalTime,
         Category.TOTAL_TIME,
         query.totalTime().orElse(UNSELECTED_RANGE),
         result,
         uriBuilder);
+    totalTime.showCounts(hasFacetData && query.totalTime().isEmpty());
     builder.addFilters(totalTime.build());
 
-    var nutrition = new FilterInfo.Builder().name(NUTRITION_INFO_NAME).showCounts(showCounts);
+    var nutrition = new FilterInfo.Builder().name(NUTRITION_INFO_NAME).showCounts(hasFacetData);
     addCategoryOptions(
         nutrition,
         Category.CALORIES,
@@ -91,6 +92,11 @@ class SidebarRenderer {
         query.carbohydrateContent().orElse(UNSELECTED_RANGE),
         result,
         uriBuilder);
+    nutrition.showCounts(
+        hasFacetData
+            && (query.calories().isEmpty()
+                && query.fatContent().isEmpty()
+                && query.carbohydrateContent().isEmpty()));
     builder.addFilters(nutrition.build());
 
     return builder.build();

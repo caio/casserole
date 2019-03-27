@@ -117,6 +117,50 @@ class SidebarRendererTest {
   }
 
   @Test
+  void dontShowCountsWithActive() {
+    // We don't drill sideways on facets so the counts that we get
+    // for a category when we already have an option selected are
+    // for the number of recipes we'd get if we selected ANOTHER
+    // option, which we don't allow (kinda...)
+    var cat = Category.TOTAL_TIME;
+
+    var facetDataBuilder = new FacetData.Builder().dimension(cat.getIndexKey());
+
+    var random = new Random();
+    cat.getOptions()
+        .forEach(
+            opt -> {
+              var count = random.nextInt(100) + 1;
+              facetDataBuilder.putChildren(opt.getIndexKey(), count);
+            });
+
+    var result =
+        new SearchResult.Builder()
+            .addRecipe(1)
+            .totalHits(1)
+            .putFacets(cat.getIndexKey(), facetDataBuilder.build())
+            .build();
+
+    // If we selected totalTime, this filter option should not
+    // have counts being displayed
+    var withTT =
+        SIDEBAR_RENDERER.render(
+            new SearchQuery.Builder()
+                .fulltext("*")
+                .totalTime((CategoryRange) cat.getOptions().get(0))
+                .build(),
+            result,
+            uriBuilder);
+    assertFalse(findFilterInfo(withTT, cat.getTitle()).showCounts());
+
+    // But any other query should render the totalTime counts
+    var withoutTT =
+        SIDEBAR_RENDERER.render(
+            new SearchQuery.Builder().fulltext("*").build(), result, uriBuilder);
+    assertTrue(findFilterInfo(withoutTT, cat.getTitle()).showCounts());
+  }
+
+  @Test
   void singleFilterSelection() {
     Category.DIET
         .getOptions()
