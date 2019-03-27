@@ -92,7 +92,7 @@ class SidebarRendererTest {
         .forEach(
             opt -> {
               var count = random.nextInt(100) + 1;
-              facetDataBuilder.addChild(opt.getIndexKey(), count);
+              facetDataBuilder.putChildren(opt.getIndexKey(), count);
               wantedCounts.put(opt.getTitle(), count);
             });
 
@@ -100,7 +100,7 @@ class SidebarRendererTest {
         new SearchResult.Builder()
             .addRecipe(1)
             .totalHits(1)
-            .addFacets(facetDataBuilder.build())
+            .putFacets(cat.getIndexKey(), facetDataBuilder.build())
             .build();
 
     var rendered = SIDEBAR_RENDERER.render(unusedQuery, result, uriBuilder);

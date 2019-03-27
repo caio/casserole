@@ -2,7 +2,7 @@ package co.caio.casserole;
 
 import co.caio.casserole.IndexFacet.Category;
 import co.caio.casserole.IndexFacet.CategoryOption;
-import co.caio.cerberus.model.FacetData.LabelData;
+import co.caio.cerberus.model.FacetData;
 import co.caio.cerberus.model.SearchQuery;
 import co.caio.cerberus.model.SearchQuery.RangedSpec;
 import co.caio.cerberus.model.SearchResult;
@@ -16,8 +16,9 @@ class SidebarRenderer {
   static final String NUTRITION_INFO_NAME = "Limit Nutrition (per serving)";
 
   private static final SearchResult EMPTY_SEARCH_RESULT = new SearchResult.Builder().build();
-  private static final LabelData EMPTY_LABEL_DATA = LabelData.of("EMPTY", 0);
   private static final RangedSpec UNSELECTED_RANGE = RangedSpec.of(0, 0);
+  private static final FacetData EMPTY_FACET_DATA =
+      new FacetData.Builder().dimension("EMPTY").build();
 
   SidebarRenderer() {}
 
@@ -95,21 +96,13 @@ class SidebarRenderer {
     return builder.build();
   }
 
-  // TODO Change the result model to use hashmaps for the label
-  //      data since the order is irrelevant (or rather, the order is
-  //      only important when rendering)
-
   private int countLabelData(SearchResult result, Category category, CategoryOption label) {
-    return (int)
-        result
-            .facets()
-            .stream()
-            .filter(m -> m.dimension().equals(category.getIndexKey()))
-            .flatMap(fd -> fd.children().stream())
-            .filter(ld -> ld.label().equals(label.getIndexKey()))
-            .findFirst()
-            .orElse(EMPTY_LABEL_DATA)
-            .count();
+    return result
+        .facets()
+        .getOrDefault(category.getIndexKey(), EMPTY_FACET_DATA)
+        .children()
+        .getOrDefault(label.getIndexKey(), 0L)
+        .intValue();
   }
 
   private void addCategoryOptions(
