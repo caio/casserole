@@ -31,7 +31,12 @@ public class IndexFacet {
     DIET(
         "Restrict by Diet",
         "diet",
-        List.of(DietOption.LOW_CARB, DietOption.VEGETARIAN, DietOption.KETO, DietOption.PALEO)),
+        List.of(
+            DietOption.LOW_CARB,
+            DietOption.VEGETARIAN,
+            DietOption.VEGAN,
+            DietOption.KETO,
+            DietOption.PALEO)),
     NUM_INGREDIENT(
         "Limit Ingredients",
         "ni",
@@ -143,6 +148,7 @@ public class IndexFacet {
     LOW_CARB("Low Carb", "lowcarb"),
     KETO("Keto", "keto"),
     PALEO("Paleo", "paleo"),
+    VEGAN("Vegan", "vegan"),
     VEGETARIAN("Vegetarian", "vegetarian");
 
     private final String title;
