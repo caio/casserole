@@ -16,9 +16,9 @@ public class NoMatchAllDocsSearchPolicy implements SearchPolicy {
   }
 
   @Override
-  public boolean shouldComputeFacets(TopDocs result) {
+  public boolean shouldComputeFacets(int totalHits) {
     // Collecting facets is relatively expensive, so we only enable
     // it when we have a reasonably small number of results
-    return result.totalHits < 50_000;
+    return totalHits < 50_000;
   }
 }
