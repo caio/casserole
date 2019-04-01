@@ -50,9 +50,9 @@ public class RequestHandler {
         .GET("/", handler::index)
         .GET("/recipe/{slug}/{recipeId}", handler::recipe)
         .GET("/go/{slug}/{recipeId}", handler::go)
-        .HEAD("/", handler::headIndex)
-        .HEAD("/search", handler::headSearch)
-        .HEAD("/recipe/{slug}/{recipeId}", handler::headRecipe)
+        .HEAD("/", handler::index)
+        .HEAD("/search", handler::search)
+        .HEAD("/recipe/{slug}/{recipeId}", handler::recipe)
         .build();
   }
 
@@ -108,20 +108,6 @@ public class RequestHandler {
   Mono<ServerResponse> go(ServerRequest request) {
     var recipe = fromRequest(request);
     return ServerResponse.permanentRedirect(URI.create(recipe.getCrawlUrl())).build();
-  }
-
-  Mono<ServerResponse> headIndex(ServerRequest ignored) {
-    return ServerResponse.ok().build();
-  }
-
-  Mono<ServerResponse> headRecipe(ServerRequest request) {
-    fromRequest(request);
-    return ServerResponse.ok().build();
-  }
-
-  Mono<ServerResponse> headSearch(ServerRequest request) {
-    parser.buildQuery(request.queryParams().toSingleValueMap());
-    return ServerResponse.ok().build();
   }
 
   static class RecipeNotFoundError extends RuntimeException {
