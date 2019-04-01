@@ -4,7 +4,6 @@ import co.caio.casserole.SearchParameterParser.SearchParameterException;
 import co.caio.cerberus.search.SearchPolicy;
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.Query;
-import org.apache.lucene.search.TopDocs;
 
 public class NoMatchAllDocsSearchPolicy implements SearchPolicy {
 

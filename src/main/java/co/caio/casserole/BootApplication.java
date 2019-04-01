@@ -1,11 +1,8 @@
 package co.caio.casserole;
 
-import static org.springframework.web.reactive.function.server.RouterFunctions.route;
-
 import co.caio.cerberus.db.ChronicleRecipeMetadataDatabase;
 import co.caio.cerberus.db.RecipeMetadataDatabase;
 import co.caio.cerberus.search.Searcher;
-import co.caio.cerberus.search.Searcher.Builder;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.micrometer.CircuitBreakerMetrics;
 import java.time.Duration;
@@ -14,19 +11,13 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.web.reactive.function.server.RouterFunction;
-import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.scheduler.Schedulers;
 
 @SpringBootApplication
 @EnableConfigurationProperties
 public class BootApplication {
 
-  private final SearchConfigurationProperties searchConfiguration;
-
-  public BootApplication(SearchConfigurationProperties conf) {
-    searchConfiguration = conf;
-  }
+  public BootApplication() {}
 
   public static void main(String[] args) {
     Schedulers.enableMetrics();
@@ -34,41 +25,31 @@ public class BootApplication {
   }
 
   @Bean
-  public RouterFunction<ServerResponse> router(RequestHandler handler) {
-    return route()
-        .GET("/search", handler::search)
-        .GET("/", handler::index)
-        .GET("/recipe/{slug}/{recipeId}", handler::recipe)
-        .GET("/go/{slug}/{recipeId}", handler::go)
-        .build();
-  }
-
-  @Bean("metadataDb")
-  RecipeMetadataDatabase getMetadataDb() {
-    return ChronicleRecipeMetadataDatabase.open(searchConfiguration.chronicle.filename);
-  }
-
-  @Bean("searchPageSize")
-  int pageSize() {
-    return searchConfiguration.pageSize;
+  RecipeMetadataDatabase getMetadataDb(SearchConfigurationProperties conf) {
+    return ChronicleRecipeMetadataDatabase.open(conf.chronicle.filename);
   }
 
   @Bean
-  Searcher getSearcher() {
-    return new Builder()
-        .dataDirectory(searchConfiguration.lucene.directory)
+  Searcher getSearcher(SearchConfigurationProperties conf) {
+    return new Searcher.Builder()
+        .dataDirectory(conf.lucene.directory)
         .searchPolicy(new NoMatchAllDocsSearchPolicy())
         .build();
   }
 
   @Bean
-  int numRecipes(Searcher searcher) {
-    return searcher.numDocs();
+  Duration searchTimeout(SearchConfigurationProperties conf) {
+    return conf.timeout;
   }
 
-  @Bean("searchTimeout")
-  Duration timeout() {
-    return searchConfiguration.timeout;
+  @Bean("searchPageSize")
+  int pageSize(SearchConfigurationProperties conf) {
+    return conf.pageSize;
+  }
+
+  @Bean
+  int numRecipes(Searcher searcher) {
+    return searcher.numDocs();
   }
 
   @Bean("searchCircuitBreaker")

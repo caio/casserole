@@ -1,7 +1,6 @@
 package co.caio.casserole;
 
 import co.caio.cerberus.db.RecipeMetadata;
-import co.caio.cerberus.db.RecipeMetadataDatabase;
 import co.caio.cerberus.model.SearchQuery;
 import co.caio.cerberus.model.SearchResult;
 import co.caio.tablier.model.ErrorInfo;
@@ -44,19 +43,17 @@ class ModelView {
 
   private final int pageSize;
   private final int numRecipes;
-  private final RecipeMetadataDatabase db;
   private final CircuitBreaker breaker;
-  private final SidebarRenderer sidebarRenderer = new SidebarRenderer();
+  private final SidebarRenderer sidebarRenderer;
 
   ModelView(
       @Qualifier("searchPageSize") int pageSize,
       @Qualifier("numRecipes") int numRecipes,
-      @Qualifier("metadataDb") RecipeMetadataDatabase db,
       CircuitBreaker breaker) {
     this.pageSize = pageSize;
     this.breaker = breaker;
-    this.db = db;
     this.numRecipes = numRecipes;
+    this.sidebarRenderer = new SidebarRenderer();
   }
 
   RockerModel renderIndex() {
@@ -70,7 +67,10 @@ class ModelView {
   private static final String GO_SLUG_ID_PATH = "/go/{slug}/{recipeId}";
 
   RockerModel renderSearch(
-      SearchQuery query, SearchResult result, UriComponentsBuilder uriBuilder) {
+      SearchQuery query,
+      SearchResult result,
+      RecipeMetadataService db,
+      UriComponentsBuilder uriBuilder) {
 
     var siteInfo =
         new SiteInfo.Builder()
@@ -105,7 +105,7 @@ class ModelView {
           uriBuilder.replaceQueryParam("page", currentPage - 1).build().toUriString());
     }
 
-    searchBuilder.recipes(renderRecipes(result.recipeIds(), recipeGoUriComponents));
+    searchBuilder.recipes(renderRecipes(result.recipeIds(), db, recipeGoUriComponents));
 
     // Sidebar links always lead to the first page
     uriBuilder.replaceQueryParam("page");
@@ -133,7 +133,8 @@ class ModelView {
         + query.dietThreshold().size(); // First bite
   }
 
-  private Iterable<RecipeInfo> renderRecipes(List<Long> recipeIds, UriComponents uriComponents) {
+  private Iterable<RecipeInfo> renderRecipes(
+      List<Long> recipeIds, RecipeMetadataService db, UriComponents uriComponents) {
     return recipeIds
         .stream()
         .map(db::findById)
@@ -151,20 +152,7 @@ class ModelView {
             .build());
   }
 
-  // XXX Move to a better place maybe
-  RecipeMetadata fetchRecipe(long recipeId, String slug) {
-    var recipe = db.findById(recipeId).orElseThrow(RecipeNotFoundError::new);
-
-    if (!slug.equals(recipe.getSlug())) {
-      throw new RecipeNotFoundError();
-    }
-
-    return recipe;
-  }
-
-  RockerModel renderSingleRecipe(long recipeId, String slug, UriComponentsBuilder builder) {
-    var recipe = fetchRecipe(recipeId, slug);
-
+  RockerModel renderSingleRecipe(RecipeMetadata recipe, UriComponentsBuilder builder) {
     return Recipe.template(
         new SiteInfo.Builder().title(recipe.getName()).searchIsAutoFocus(false).build(),
         new RecipeMetadataRecipeInfoAdapter(recipe, builder.replacePath(GO_SLUG_ID_PATH).build()));
@@ -256,12 +244,6 @@ class ModelView {
   static class OverPaginationError extends RuntimeException {
     OverPaginationError(String message) {
       super(message);
-    }
-  }
-
-  static class RecipeNotFoundError extends RuntimeException {
-    RecipeNotFoundError() {
-      super();
     }
   }
 }
