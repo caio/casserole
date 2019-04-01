@@ -5,28 +5,25 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 
 import co.caio.casserole.SearchParameterParser.SearchParameterException;
-import co.caio.cerberus.Util;
-import co.caio.cerberus.db.HashMapRecipeMetadataDatabase;
 import co.caio.cerberus.db.RecipeMetadata;
-import co.caio.cerberus.db.RecipeMetadataDatabase;
+import co.caio.cerberus.model.Recipe;
 import co.caio.cerberus.model.SearchResult;
 import co.caio.cerberus.search.Searcher;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.stubbing.Answer;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Primary;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -38,42 +35,20 @@ class BootApplicationTest {
   @Autowired WebTestClient testClient;
   @Autowired CircuitBreaker breaker;
 
+  @MockBean RecipeMetadataService metadataService;
   @MockBean Searcher searcher;
 
   @TestConfiguration
   static class TestConfig {
-    @Bean("searchTimeout")
-    Duration getTimeout() {
+
+    @Bean("numRecipes")
+    int numRecipes() {
+      return 1;
+    }
+
+    @Bean
+    Duration searchTimeout() {
       return Duration.ofMillis(100);
-    }
-
-    @Bean
-    @Primary
-    CircuitBreaker getCircuitBreaker() {
-      return CircuitBreaker.ofDefaults("test");
-    }
-
-    @Bean("searchPageSize")
-    int pageSize() {
-      return 10;
-    }
-
-    @Bean
-    ModelView modelView(
-        @Qualifier("metadataDb") RecipeMetadataDatabase db, CircuitBreaker breaker) {
-      return new ModelView(pageSize(), 1, breaker);
-    }
-
-    @Bean("metadataDb")
-    RecipeMetadataDatabase getMetadataDb() {
-      var db = new HashMapRecipeMetadataDatabase();
-      db.saveAll(List.of(RecipeMetadata.fromRecipe(Util.getBasicRecipe())));
-      return db;
-    }
-
-    @Bean
-    SearchConfigurationProperties conf() {
-      return new SearchConfigurationProperties();
     }
   }
 
@@ -161,7 +136,11 @@ class BootApplicationTest {
 
   @Test
   void goActionRedirectsProperly() {
-    var recipe = Util.getBasicRecipe();
+    var recipe = getBasicRecipe();
+
+    given(metadataService.findById(recipe.recipeId()))
+        .willReturn(Optional.of(RecipeMetadata.fromRecipe(recipe)));
+
     var goUri = String.format("/go/%s/%d", recipe.slug(), recipe.recipeId());
     testClient
         .get()
@@ -208,7 +187,9 @@ class BootApplicationTest {
 
   @Test
   void recipeEndpointWorks() {
-    var basic = Util.getBasicRecipe();
+    var basic = getBasicRecipe();
+    given(metadataService.findById(basic.recipeId()))
+        .willReturn(Optional.of(RecipeMetadata.fromRecipe(basic)));
 
     var body =
         testClient
@@ -252,7 +233,9 @@ class BootApplicationTest {
 
   @Test
   void badRecipeURLYields404() {
-    var basic = Util.getBasicRecipe();
+    var basic = getBasicRecipe();
+    given(metadataService.findById(basic.recipeId()))
+        .willReturn(Optional.of(RecipeMetadata.fromRecipe(basic)));
     // Make sure the correct uri works
     assertGet("/recipe/" + basic.slug() + "/" + basic.recipeId(), HttpStatus.OK);
     // But wrong slug 404s
@@ -295,8 +278,11 @@ class BootApplicationTest {
 
   @Test
   void recipeHeadRequestWorks() {
-    var basic = Util.getBasicRecipe();
+    var basic = getBasicRecipe();
     var validUri = "/recipe/" + basic.slug() + "/" + basic.recipeId();
+
+    given(metadataService.findById(basic.recipeId()))
+        .willReturn(Optional.of(RecipeMetadata.fromRecipe(basic)));
 
     assertHead("/recipe/", HttpStatus.NOT_FOUND);
     assertHead("/recipe/wrongslug", HttpStatus.NOT_FOUND);
@@ -313,5 +299,17 @@ class BootApplicationTest {
     assertHead("/search", HttpStatus.BAD_REQUEST);
     assertHead("/search?q=no", HttpStatus.BAD_REQUEST);
     assertHead("/search?q=banana", HttpStatus.OK);
+  }
+
+  static Recipe getBasicRecipe() {
+    return new Recipe.Builder()
+        .recipeId(1)
+        .name("name")
+        .siteName("site")
+        .slug("slug")
+        .crawlUrl("url")
+        .addIngredients("egg")
+        .addInstructions("eat")
+        .build();
   }
 }

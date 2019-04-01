@@ -1,8 +1,9 @@
 package co.caio.casserole;
 
 import co.caio.cerberus.db.RecipeMetadata;
-import co.caio.cerberus.search.Searcher;
+import com.fizzed.rocker.RockerModel;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
+import io.github.resilience4j.reactor.circuitbreaker.operator.CircuitBreakerOperator;
 import java.net.URI;
 import java.time.Duration;
 import org.springframework.http.MediaType;
@@ -16,24 +17,24 @@ import reactor.core.scheduler.Schedulers;
 
 @Component
 public class RequestHandler {
-  private final Searcher searcher;
-  private final Duration timeout;
   private final SearchParameterParser parser;
-  private final CircuitBreaker breaker;
   private final ModelView modelView;
   private final RecipeMetadataService recipeMetadataService;
+  private final RecipeSearchService searchService;
+  private final CircuitBreaker breaker;
+  private final Duration searchTimeout;
 
   public RequestHandler(
-      Searcher searcher,
-      Duration timeout,
+      RecipeSearchService searchService,
+      Duration searchTimeout,
       CircuitBreaker breaker,
       ModelView modelView,
       RecipeMetadataService recipeMetadataService,
       SearchParameterParser parameterParser) {
-    this.searcher = searcher;
-    this.timeout = timeout;
-    this.parser = parameterParser;
+    this.searchService = searchService;
     this.breaker = breaker;
+    this.searchTimeout = searchTimeout;
+    this.parser = parameterParser;
     this.modelView = modelView;
     this.recipeMetadataService = recipeMetadataService;
   }
@@ -47,23 +48,22 @@ public class RequestHandler {
   Mono<ServerResponse> search(ServerRequest request) {
     var query = parser.buildQuery(request.queryParams().toSingleValueMap());
 
-    return Mono.fromCallable(() -> breaker.executeCallable(() -> searcher.search(query)))
-        // run the search in the parallel scheduler
-        .subscribeOn(Schedulers.parallel())
-        // and render in the elastic one
-        .publishOn(Schedulers.elastic())
-        .timeout(timeout)
-        .flatMap(
-            result ->
-                ServerResponse.ok()
-                    .contentType(MediaType.TEXT_HTML)
-                    .body(
-                        BodyInserters.fromObject(
-                            modelView.renderSearch(
-                                query,
-                                result,
-                                recipeMetadataService,
-                                UriComponentsBuilder.fromUri(request.uri())))));
+    return ServerResponse.ok()
+        .contentType(MediaType.TEXT_HTML)
+        .body(
+            searchService
+                .search(query)
+                .timeout(searchTimeout)
+                .transform(CircuitBreakerOperator.of(breaker))
+                .publishOn(Schedulers.elastic())
+                .map(
+                    result ->
+                        modelView.renderSearch(
+                            query,
+                            result,
+                            recipeMetadataService,
+                            UriComponentsBuilder.fromUri(request.uri()))),
+            RockerModel.class);
   }
 
   private RecipeMetadata fromRequest(ServerRequest request) {
