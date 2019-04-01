@@ -1,14 +1,18 @@
 package co.caio.casserole;
 
+import static org.springframework.web.reactive.function.server.RouterFunctions.route;
+
 import co.caio.cerberus.db.RecipeMetadata;
 import com.fizzed.rocker.RockerModel;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.reactor.circuitbreaker.operator.CircuitBreakerOperator;
 import java.net.URI;
 import java.time.Duration;
+import org.springframework.context.annotation.Bean;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.BodyInserters;
+import org.springframework.web.reactive.function.server.RouterFunction;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -37,6 +41,19 @@ public class RequestHandler {
     this.parser = parameterParser;
     this.modelView = modelView;
     this.recipeMetadataService = recipeMetadataService;
+  }
+
+  @Bean
+  public RouterFunction<ServerResponse> router(RequestHandler handler) {
+    return route()
+        .GET("/search", handler::search)
+        .GET("/", handler::index)
+        .GET("/recipe/{slug}/{recipeId}", handler::recipe)
+        .GET("/go/{slug}/{recipeId}", handler::go)
+        .HEAD("/", handler::headIndex)
+        .HEAD("/search", handler::headSearch)
+        .HEAD("/recipe/{slug}/{recipeId}", handler::headRecipe)
+        .build();
   }
 
   Mono<ServerResponse> index(ServerRequest ignored) {
