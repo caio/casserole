@@ -61,7 +61,7 @@ class BootApplicationTest {
     @Bean
     ModelView modelView(
         @Qualifier("metadataDb") RecipeMetadataDatabase db, CircuitBreaker breaker) {
-      return new ModelView(pageSize(), 1, db, breaker);
+      return new ModelView(pageSize(), 1, breaker);
     }
 
     @Bean("metadataDb")

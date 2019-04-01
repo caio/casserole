@@ -3,7 +3,6 @@ package co.caio.casserole;
 import static org.junit.jupiter.api.Assertions.*;
 
 import co.caio.casserole.ModelView.OverPaginationError;
-import co.caio.casserole.ModelView.RecipeNotFoundError;
 import co.caio.cerberus.Util;
 import co.caio.cerberus.db.HashMapRecipeMetadataDatabase;
 import co.caio.cerberus.db.RecipeMetadata;
@@ -24,6 +23,7 @@ class ModelViewTest {
 
   private static final int pageSize = 2; // just to simplify pagination testing
   private static final ModelView modelView;
+  private static final RecipeMetadataService recipeMetadataService;
   private static final CircuitBreaker breaker = CircuitBreaker.ofDefaults("mvt");
 
   private UriComponentsBuilder uriBuilder;
@@ -32,7 +32,8 @@ class ModelViewTest {
     var db = new HashMapRecipeMetadataDatabase();
     db.saveAll(
         Util.getSampleRecipes().map(RecipeMetadata::fromRecipe).collect(Collectors.toList()));
-    modelView = new ModelView(pageSize, Util.expectedIndexSize(), db, breaker);
+    recipeMetadataService = new RecipeMetadataService(db);
+    modelView = new ModelView(pageSize, Util.expectedIndexSize(), breaker);
   }
 
   private Document parseOutput(RockerModel rockerModel) {
@@ -77,7 +78,8 @@ class ModelViewTest {
     var unusedQuery = new SearchQuery.Builder().fulltext("unused").build();
     var result = new SearchResult.Builder().build();
 
-    var doc = parseOutput(modelView.renderSearch(unusedQuery, result, uriBuilder));
+    var doc =
+        parseOutput(modelView.renderSearch(unusedQuery, result, recipeMetadataService, uriBuilder));
     assertTrue(doc.title().startsWith(ModelView.SEARCH_PAGE_TITLE));
     assertTrue(
         doc.selectFirst("section#results div.notification.content.is-danger")
@@ -91,7 +93,7 @@ class ModelViewTest {
     var result = new SearchResult.Builder().totalHits(180).build();
     assertThrows(
         OverPaginationError.class,
-        () -> modelView.renderSearch(largeOffsetQuery, result, uriBuilder));
+        () -> modelView.renderSearch(largeOffsetQuery, result, recipeMetadataService, uriBuilder));
   }
 
   @Test
@@ -99,7 +101,8 @@ class ModelViewTest {
     var unusedQuery = new SearchQuery.Builder().fulltext("unused").build();
     var result = new SearchResult.Builder().totalHits(1).addRecipe(1).build();
 
-    var doc = parseOutput(modelView.renderSearch(unusedQuery, result, uriBuilder));
+    var doc =
+        parseOutput(modelView.renderSearch(unusedQuery, result, recipeMetadataService, uriBuilder));
 
     assertTrue(doc.title().startsWith(ModelView.SEARCH_PAGE_TITLE));
 
@@ -113,7 +116,10 @@ class ModelViewTest {
     var resultWithNextPage =
         new SearchResult.Builder().totalHits(3).addRecipe(1).addRecipe(2).build();
 
-    var doc = parseOutput(modelView.renderSearch(unusedQuery, resultWithNextPage, uriBuilder));
+    var doc =
+        parseOutput(
+            modelView.renderSearch(
+                unusedQuery, resultWithNextPage, recipeMetadataService, uriBuilder));
 
     assertTrue(doc.title().startsWith(ModelView.SEARCH_PAGE_TITLE));
 
@@ -132,7 +138,9 @@ class ModelViewTest {
             .build();
 
     var doc =
-        parseOutput(modelView.renderSearch(unusedQuery, offsetResultWithNextPage, uriBuilder));
+        parseOutput(
+            modelView.renderSearch(
+                unusedQuery, offsetResultWithNextPage, recipeMetadataService, uriBuilder));
 
     assertTrue(doc.title().startsWith(ModelView.SEARCH_PAGE_TITLE));
 
@@ -153,7 +161,9 @@ class ModelViewTest {
             .build();
 
     var doc =
-        parseOutput(modelView.renderSearch(unusedQuery, offsetResultWithNextPage, uriBuilder));
+        parseOutput(
+            modelView.renderSearch(
+                unusedQuery, offsetResultWithNextPage, recipeMetadataService, uriBuilder));
 
     assertTrue(doc.title().startsWith(ModelView.SEARCH_PAGE_TITLE));
 
@@ -173,7 +183,10 @@ class ModelViewTest {
             .addRecipe(4)
             .build();
 
-    var doc = parseOutput(modelView.renderSearch(secondPage, offsetResultWithNextPage, uriBuilder));
+    var doc =
+        parseOutput(
+            modelView.renderSearch(
+                secondPage, offsetResultWithNextPage, recipeMetadataService, uriBuilder));
 
     var sidebarLinks = doc.select("div#sidebar ul.menu-list li a").eachAttr("href");
     assertTrue(sidebarLinks.size() > 0);
@@ -191,7 +204,10 @@ class ModelViewTest {
             .addRecipe(4)
             .build();
 
-    var doc = parseOutput(modelView.renderSearch(secondPage, offsetResultWithNextPage, uriBuilder));
+    var doc =
+        parseOutput(
+            modelView.renderSearch(
+                secondPage, offsetResultWithNextPage, recipeMetadataService, uriBuilder));
 
     assertTrue(doc.title().startsWith(ModelView.SEARCH_PAGE_TITLE));
 
@@ -200,31 +216,13 @@ class ModelViewTest {
   }
 
   @Test
-  void incorrectSlugYieldsNotFound() {
-    var recipe = Util.getSampleRecipes().limit(1).findFirst().orElseThrow();
-    assertThrows(
-        RecipeNotFoundError.class,
-        () ->
-            modelView.renderSingleRecipe(
-                recipe.recipeId(), "incorrect slug", UriComponentsBuilder.newInstance()));
-  }
-
-  @Test
-  void incorrectIdYieldsNotFound() {
-    var recipe = Util.getSampleRecipes().limit(1).findFirst().orElseThrow();
-    assertThrows(
-        RecipeNotFoundError.class,
-        () -> modelView.renderSingleRecipe(213, recipe.slug(), UriComponentsBuilder.newInstance()));
-  }
-
-  @Test
   void renderSingleRecipe() {
-    var recipe = Util.getSampleRecipes().limit(1).findFirst().orElseThrow();
+    var model = Util.getSampleRecipes().limit(1).findFirst().orElseThrow();
+    var recipe = recipeMetadataService.findById(model.recipeId());
+    assertTrue(recipe.isPresent());
     var doc =
-        parseOutput(
-            modelView.renderSingleRecipe(
-                recipe.recipeId(), recipe.slug(), UriComponentsBuilder.newInstance()));
-    assertTrue(doc.title().startsWith(recipe.name()));
+        parseOutput(modelView.renderSingleRecipe(recipe.get(), UriComponentsBuilder.newInstance()));
+    assertTrue(doc.title().startsWith(model.name()));
   }
 
   @Test

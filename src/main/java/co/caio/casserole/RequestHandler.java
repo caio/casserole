@@ -1,5 +1,6 @@
 package co.caio.casserole;
 
+import co.caio.cerberus.db.RecipeMetadata;
 import co.caio.cerberus.search.Searcher;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import java.net.URI;
@@ -20,18 +21,21 @@ public class RequestHandler {
   private final SearchParameterParser parser;
   private final CircuitBreaker breaker;
   private final ModelView modelView;
+  private final RecipeMetadataService recipeMetadataService;
 
   public RequestHandler(
       Searcher searcher,
       Duration timeout,
       CircuitBreaker breaker,
       ModelView modelView,
+      RecipeMetadataService recipeMetadataService,
       SearchParameterParser parameterParser) {
     this.searcher = searcher;
     this.timeout = timeout;
     this.parser = parameterParser;
     this.breaker = breaker;
     this.modelView = modelView;
+    this.recipeMetadataService = recipeMetadataService;
   }
 
   Mono<ServerResponse> index(ServerRequest ignored) {
@@ -56,24 +60,42 @@ public class RequestHandler {
                     .body(
                         BodyInserters.fromObject(
                             modelView.renderSearch(
-                                query, result, UriComponentsBuilder.fromUri(request.uri())))));
+                                query,
+                                result,
+                                recipeMetadataService,
+                                UriComponentsBuilder.fromUri(request.uri())))));
+  }
+
+  RecipeMetadata fromRequest(ServerRequest request) {
+    var slug = request.pathVariable("slug");
+    var recipeId = Long.parseLong(request.pathVariable("recipeId"));
+
+    var recipe = recipeMetadataService.findById(recipeId).orElseThrow(RecipeNotFoundError::new);
+
+    if (!slug.equals(recipe.getSlug())) {
+      throw new RecipeNotFoundError();
+    }
+
+    return recipe;
   }
 
   Mono<ServerResponse> recipe(ServerRequest request) {
-    var slug = request.pathVariable("slug");
-    var recipeId = Long.parseLong(request.pathVariable("recipeId"));
+    var recipe = fromRequest(request);
     return ServerResponse.ok()
         .contentType(MediaType.TEXT_HTML)
         .body(
             BodyInserters.fromObject(
-                modelView.renderSingleRecipe(
-                    recipeId, slug, UriComponentsBuilder.fromUri(request.uri()))));
+                modelView.renderSingleRecipe(recipe, UriComponentsBuilder.fromUri(request.uri()))));
   }
 
   Mono<ServerResponse> go(ServerRequest request) {
-    var slug = request.pathVariable("slug");
-    var recipeId = Long.parseLong(request.pathVariable("recipeId"));
-    var recipe = modelView.fetchRecipe(recipeId, slug);
+    var recipe = fromRequest(request);
     return ServerResponse.permanentRedirect(URI.create(recipe.getCrawlUrl())).build();
+  }
+
+  static class RecipeNotFoundError extends RuntimeException {
+    RecipeNotFoundError() {
+      super();
+    }
   }
 }
