@@ -283,4 +283,35 @@ class BootApplicationTest {
   void assertGet(String uri, HttpStatus status) {
     assertGet(uri, status, MediaType.TEXT_HTML);
   }
+
+  void assertHead(String uri, HttpStatus status) {
+    testClient.head().uri(uri).exchange().expectStatus().isEqualTo(status);
+  }
+
+  @Test
+  void indexHeadRequestWorks() {
+    assertHead("/", HttpStatus.OK);
+  }
+
+  @Test
+  void recipeHeadRequestWorks() {
+    var basic = Util.getBasicRecipe();
+    var validUri = "/recipe/" + basic.slug() + "/" + basic.recipeId();
+
+    assertHead("/recipe/", HttpStatus.NOT_FOUND);
+    assertHead("/recipe/wrongslug", HttpStatus.NOT_FOUND);
+    assertHead("/recipe/wrongslug/wrongid", HttpStatus.NOT_FOUND);
+    assertHead("/recipe/wrongslug/wrongid", HttpStatus.NOT_FOUND);
+    assertHead("/recipe/" + basic.slug() + "/wrongid", HttpStatus.NOT_FOUND);
+    assertHead("/recipe/wrongslug/" + basic.recipeId(), HttpStatus.NOT_FOUND);
+
+    assertHead(validUri, HttpStatus.OK);
+  }
+
+  @Test
+  void searchHeadWorksWithValidParams() {
+    assertHead("/search", HttpStatus.BAD_REQUEST);
+    assertHead("/search?q=no", HttpStatus.BAD_REQUEST);
+    assertHead("/search?q=banana", HttpStatus.OK);
+  }
 }

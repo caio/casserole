@@ -93,6 +93,20 @@ public class RequestHandler {
     return ServerResponse.permanentRedirect(URI.create(recipe.getCrawlUrl())).build();
   }
 
+  Mono<ServerResponse> headIndex(ServerRequest ignored) {
+    return ServerResponse.ok().build();
+  }
+
+  Mono<ServerResponse> headRecipe(ServerRequest request) {
+    fromRequest(request);
+    return ServerResponse.ok().build();
+  }
+
+  Mono<ServerResponse> headSearch(ServerRequest request) {
+    parser.buildQuery(request.queryParams().toSingleValueMap());
+    return ServerResponse.ok().build();
+  }
+
   static class RecipeNotFoundError extends RuntimeException {
     RecipeNotFoundError() {
       super();
