@@ -66,7 +66,7 @@ public class RequestHandler {
                                 UriComponentsBuilder.fromUri(request.uri())))));
   }
 
-  RecipeMetadata fromRequest(ServerRequest request) {
+  private RecipeMetadata fromRequest(ServerRequest request) {
     var slug = request.pathVariable("slug");
     var recipeId = Long.parseLong(request.pathVariable("recipeId"));
 
