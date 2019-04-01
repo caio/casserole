@@ -5,7 +5,6 @@ import static org.springframework.web.reactive.function.server.RouterFunctions.r
 import co.caio.cerberus.db.ChronicleRecipeMetadataDatabase;
 import co.caio.cerberus.db.RecipeMetadataDatabase;
 import co.caio.cerberus.search.Searcher;
-import co.caio.cerberus.search.Searcher.Builder;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.micrometer.CircuitBreakerMetrics;
 import java.time.Duration;
@@ -46,9 +45,22 @@ public class BootApplication {
         .build();
   }
 
-  @Bean("metadataDb")
+  @Bean
   RecipeMetadataDatabase getMetadataDb() {
     return ChronicleRecipeMetadataDatabase.open(searchConfiguration.chronicle.filename);
+  }
+
+  @Bean
+  Searcher getSearcher(SearchConfigurationProperties conf) {
+    return new Searcher.Builder()
+        .dataDirectory(conf.lucene.directory)
+        .searchPolicy(new NoMatchAllDocsSearchPolicy())
+        .build();
+  }
+
+  @Bean
+  Duration searchTimeout(SearchConfigurationProperties conf) {
+    return conf.timeout;
   }
 
   @Bean("searchPageSize")
@@ -57,21 +69,8 @@ public class BootApplication {
   }
 
   @Bean
-  Searcher getSearcher() {
-    return new Builder()
-        .dataDirectory(searchConfiguration.lucene.directory)
-        .searchPolicy(new NoMatchAllDocsSearchPolicy())
-        .build();
-  }
-
-  @Bean
   int numRecipes(Searcher searcher) {
     return searcher.numDocs();
-  }
-
-  @Bean("searchTimeout")
-  Duration timeout() {
-    return searchConfiguration.timeout;
   }
 
   @Bean("searchCircuitBreaker")
