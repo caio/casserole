@@ -25,7 +25,7 @@ public class IndexFacet {
         "sort",
         List.of(
             SortByOption.RELEVANCE,
-            SortByOption.COOK_TIME,
+            SortByOption.TOTAL_TIME,
             SortByOption.NUM_INGREDIENTS,
             SortByOption.CALORIES)),
     DIET(
@@ -116,7 +116,7 @@ public class IndexFacet {
 
   enum SortByOption implements CategoryOption {
     RELEVANCE("Relevance", SortOrder.RELEVANCE),
-    COOK_TIME("Fastest to Cook", SortOrder.COOK_TIME),
+    TOTAL_TIME("Fastest to Complete", SortOrder.TOTAL_TIME),
     NUM_INGREDIENTS("Least Ingredients", SortOrder.NUM_INGREDIENTS),
     CALORIES("Calories", SortOrder.CALORIES);
 
