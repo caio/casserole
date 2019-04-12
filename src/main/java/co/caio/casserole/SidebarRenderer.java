@@ -94,9 +94,9 @@ class SidebarRenderer {
         uriBuilder);
     nutrition.showCounts(
         hasFacetData
-            && (query.calories().isEmpty()
-                && query.fatContent().isEmpty()
-                && query.carbohydrateContent().isEmpty()));
+            && query.calories().isEmpty()
+            && query.fatContent().isEmpty()
+            && query.carbohydrateContent().isEmpty());
     builder.addFilters(nutrition.build());
 
     return builder.build();
