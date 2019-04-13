@@ -19,6 +19,7 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 import reactor.core.publisher.Flux;
+import reactor.core.scheduler.Schedulers;
 
 @Command(name = "loader", mixinStandardHelpOptions = true, version = "0.0.1")
 public class Loader implements Runnable {
@@ -45,7 +46,8 @@ public class Loader implements Runnable {
     }
 
     if (databasePath == null && lucenePath == null) {
-      System.out.println("Nothing to do!");
+      System.out.println("Nothing to do, computing stats...");
+      System.out.println(computeStats());
       return;
     }
 
@@ -85,18 +87,23 @@ public class Loader implements Runnable {
             .build();
 
     System.out.println("Ingesting all recipes. This will take a while...");
-    recipeStream()
+
+    Flux.fromStream(recipeStream())
         .parallel()
-        .forEach(
+        .runOn(Schedulers.parallel())
+        .doOnNext(
             recipe -> {
               try {
                 indexer.addRecipe(recipe);
-              } catch (Exception rethrown) {
+              } catch (IOException rethrown) {
                 throw new RuntimeException(rethrown);
               }
-            });
+            })
+        .sequential()
+        .blockLast();
 
     try {
+      System.out.println("Committing changes to disk");
       indexer.commit();
       System.out.println("Optimizing index for read-only usage");
       indexer.mergeSegments();
@@ -161,5 +168,6 @@ public class Loader implements Runnable {
 
   public static void main(String[] args) {
     CommandLine.run(new Loader(), args);
+    Schedulers.shutdownNow();
   }
 }
