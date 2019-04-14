@@ -253,7 +253,7 @@ class BootApplicationTest {
   @Test
   void handlePolicyExceptionCorrectly() {
     given(searcher.search(any())).willThrow(PolicyException.class);
-    assertGet("/search?until+-cup",HttpStatus.BAD_REQUEST);
+    assertGet("/search?until+-cup", HttpStatus.BAD_REQUEST);
   }
 
   void assertGet(String uri, HttpStatus status, MediaType contentType) {

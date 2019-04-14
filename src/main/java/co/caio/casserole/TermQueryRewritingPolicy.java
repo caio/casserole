@@ -19,19 +19,19 @@ import org.apache.lucene.search.TermQuery;
 
 public class TermQueryRewritingPolicy implements SearchPolicy {
 
-  private final int maxTermFrequency;
+  private final int maxMatchingDocs;
 
-  public TermQueryRewritingPolicy(int maxTermFrequency) {
-    if (maxTermFrequency < 1) {
-      throw new IllegalStateException("maxTermFrequency must be > 0");
+  public TermQueryRewritingPolicy(int maxMatchingDocs) {
+    if (maxMatchingDocs < 1) {
+      throw new IllegalStateException("maxMatchingDocs must be > 0");
     }
-    this.maxTermFrequency = maxTermFrequency;
+    this.maxMatchingDocs = maxMatchingDocs;
   }
 
   @Override
   public Query rewriteParsedFulltextQuery(Query query) {
     if (query instanceof BooleanQuery) {
-      return new MagicQuery((BooleanQuery) query, maxTermFrequency);
+      return new MagicQuery((BooleanQuery) query, maxMatchingDocs);
     }
     return query;
   }
@@ -50,11 +50,11 @@ public class TermQueryRewritingPolicy implements SearchPolicy {
   }
 
   static class MagicQuery extends Query {
-    private final int maxTermFrequency;
+    private final int maxDocFrequency;
     private final BooleanQuery delegate;
 
-    MagicQuery(BooleanQuery delegate, int maxTermFrequency) {
-      this.maxTermFrequency = maxTermFrequency;
+    MagicQuery(BooleanQuery delegate, int maxDocFrequency) {
+      this.maxDocFrequency = maxDocFrequency;
       this.delegate = delegate;
     }
 
@@ -104,7 +104,7 @@ public class TermQueryRewritingPolicy implements SearchPolicy {
 
       for (int i = 0; i < stats.length; i++) {
         var clause = tbqs.get(i);
-        if (stats[i] != null && stats[i].totalTermFreq() > maxTermFrequency) {
+        if (stats[i] != null && stats[i].docFreq() > maxDocFrequency) {
           if (expensiveClauses == null) {
             expensiveClauses = new ArrayList<>();
           }
