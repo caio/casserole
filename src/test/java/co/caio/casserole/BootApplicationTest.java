@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 
 import co.caio.casserole.SearchParameterParser.SearchParameterException;
+import co.caio.casserole.TermQueryRewritingPolicy.PolicyException;
 import co.caio.cerberus.db.RecipeMetadata;
 import co.caio.cerberus.model.Recipe;
 import co.caio.cerberus.model.SearchResult;
@@ -247,6 +248,12 @@ class BootApplicationTest {
     // And, of course, incomplete uris also 404s
     assertGet("/recipe/" + basic.slug(), HttpStatus.NOT_FOUND);
     assertGet("/recipe/", HttpStatus.NOT_FOUND);
+  }
+
+  @Test
+  void handlePolicyExceptionCorrectly() {
+    given(searcher.search(any())).willThrow(PolicyException.class);
+    assertGet("/search?until+-cup",HttpStatus.BAD_REQUEST);
   }
 
   void assertGet(String uri, HttpStatus status, MediaType contentType) {

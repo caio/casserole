@@ -3,6 +3,7 @@ package co.caio.casserole;
 import co.caio.casserole.ModelView.OverPaginationError;
 import co.caio.casserole.RequestHandler.RecipeNotFoundError;
 import co.caio.casserole.SearchParameterParser.SearchParameterException;
+import co.caio.casserole.TermQueryRewritingPolicy.PolicyException;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerOpenException;
 import java.util.Map;
 import java.util.Optional;
@@ -110,6 +111,11 @@ public class ExceptionHandler extends AbstractErrorWebExceptionHandler {
           RECIPE_NOT_FOUND,
           RecipeNotFoundError.class,
           RECIPE_NOT_FOUND,
+          PolicyException.class,
+          new ErrorSpec(
+              HttpStatus.BAD_REQUEST,
+              "Query Interpreter Error",
+              "We detected your query as expensive to execute but don't really know how to handle it. Sorry for the inconvenience. Try being more specific if possible."),
           TimeoutException.class,
           new ErrorSpec(
               HttpStatus.REQUEST_TIMEOUT,
