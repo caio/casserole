@@ -33,7 +33,7 @@ public class BootApplication {
   Searcher getSearcher(SearchConfigurationProperties conf) {
     return new Searcher.Builder()
         .dataDirectory(conf.lucene.directory)
-        .searchPolicy(new NoMatchAllDocsSearchPolicy())
+        .searchPolicy(new TermQueryRewritingPolicy(200_000))
         .build();
   }
 

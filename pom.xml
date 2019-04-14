@@ -21,7 +21,7 @@
     <properties>
         <start-class>co.caio.casserole.BootApplication</start-class>
 
-        <cerberus.version>0.3.0</cerberus.version>
+        <cerberus.version>0.5.0</cerberus.version>
         <tablier.version>0.4.5</tablier.version>
 
         <spring-boot.version>2.1.4.RELEASE</spring-boot.version>
