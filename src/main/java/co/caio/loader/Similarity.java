@@ -2,10 +2,9 @@ package co.caio.loader;
 
 import co.caio.cerberus.model.Recipe;
 import co.caio.cerberus.search.Searcher;
-import co.caio.loader.converter.ExistingDirectoryPath;
 import co.caio.loader.converter.NonZeroPositiveInt;
+import co.caio.loader.converter.SearcherConverter;
 import co.caio.loader.mixin.Source;
-import java.nio.file.Path;
 import java.util.StringJoiner;
 import java.util.concurrent.atomic.AtomicInteger;
 import picocli.CommandLine.Command;
@@ -22,9 +21,9 @@ public class Similarity implements Runnable {
   @Option(
       names = {"-l", "--lucene"},
       description = "Path to existing lucene index (built via the `lucene` command)",
-      converter = ExistingDirectoryPath.class,
+      converter = SearcherConverter.class,
       required = true)
-  private Path lucene;
+  private Searcher searcher;
 
   @Option(
       names = {"-n"},
@@ -41,8 +40,6 @@ public class Similarity implements Runnable {
 
   @Override
   public void run() {
-
-    var searcher = new Searcher.Builder().dataDirectory(lucene).build();
 
     var total = new AtomicInteger(0);
     var missing = new AtomicInteger(0);
