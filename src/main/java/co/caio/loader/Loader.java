@@ -8,7 +8,7 @@ import reactor.core.scheduler.Schedulers;
 @Command(
     name = "loader",
     version = "0.0.2",
-    subcommands = {Lucene.class, Database.class},
+    subcommands = {Lucene.class, Database.class, Similarity.class},
     mixinStandardHelpOptions = true)
 public class Loader implements Runnable {
 
