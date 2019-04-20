@@ -7,6 +7,7 @@ import co.caio.loader.converter.SearcherConverter;
 import co.caio.loader.mixin.Source;
 import java.util.StringJoiner;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Mixin;
 import picocli.CommandLine.Option;
@@ -55,20 +56,27 @@ public class Similarity implements Runnable {
                 return;
               }
 
-              var result = searcher.findSimilar(recipeAsText(recipe), numSimilarities);
+              var similarIds =
+                  searcher
+                      .findSimilar(recipeAsText(recipe), numSimilarities + 1)
+                      .recipeIds()
+                      .stream()
+                      .filter(foundId -> foundId != recipe.recipeId())
+                      .limit(numSimilarities)
+                      .collect(Collectors.toList());
 
               if (total.addAndGet(1) % 10000 == 0) {
                 dumpStats(total, missing);
               }
 
-              if (result.recipeIds().isEmpty()) {
+              if (similarIds.isEmpty()) {
                 missing.addAndGet(1);
                 return;
               }
 
               var joiner = new StringJoiner(",");
               joiner.add(Long.toString(recipe.recipeId()));
-              result.recipeIds().stream().map(Object::toString).forEach(joiner::add);
+              similarIds.stream().map(Object::toString).forEach(joiner::add);
 
               System.out.println(joiner.toString());
             })
