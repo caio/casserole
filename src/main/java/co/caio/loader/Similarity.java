@@ -33,6 +33,12 @@ public class Similarity implements Runnable {
       defaultValue = "20")
   private int numSimilarities;
 
+  @Option(
+      names = {"--skip"},
+      description = "Skip recipes that already have similar ids",
+      defaultValue = "false")
+  private boolean skipNonEmpty;
+
   @Override
   public void run() {
 
@@ -48,6 +54,10 @@ public class Similarity implements Runnable {
         .runOn(Schedulers.parallel())
         .doOnNext(
             recipe -> {
+              if (skipNonEmpty && !recipe.similarRecipeIds().isEmpty()) {
+                return;
+              }
+
               var result = searcher.findSimilar(recipeAsText(recipe), numSimilarities);
 
               if (total.addAndGet(1) % 10000 == 0) {
