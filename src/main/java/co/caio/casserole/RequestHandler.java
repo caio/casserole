@@ -49,10 +49,12 @@ public class RequestHandler {
         .GET("/search", handler::search)
         .GET("/", handler::index)
         .GET("/recipe/{slug}/{recipeId}", handler::recipe)
+        .GET("/similar/{slug}/{recipeId}", handler::similar)
         .GET("/go/{slug}/{recipeId}", handler::go)
         .HEAD("/", handler::index)
         .HEAD("/search", handler::search)
         .HEAD("/recipe/{slug}/{recipeId}", handler::recipe)
+        .HEAD("/similar/{slug}/{recipeId}", handler::similar)
         .build();
   }
 
@@ -103,6 +105,17 @@ public class RequestHandler {
         .body(
             BodyInserters.fromObject(
                 modelView.renderSingleRecipe(recipe, UriComponentsBuilder.fromUri(request.uri()))));
+  }
+
+  Mono<ServerResponse> similar(ServerRequest request) {
+    var recipe = fromRequest(request);
+
+    return ServerResponse.ok()
+        .contentType(MediaType.TEXT_HTML)
+        .body(
+            BodyInserters.fromObject(
+                modelView.renderSimilar(
+                    recipe, recipeMetadataService, UriComponentsBuilder.fromUri(request.uri()))));
   }
 
   Mono<ServerResponse> go(ServerRequest request) {
