@@ -5,6 +5,7 @@ import co.caio.cerberus.model.SearchQuery;
 import co.caio.cerberus.model.SearchResult;
 import co.caio.tablier.model.ErrorInfo;
 import co.caio.tablier.model.RecipeInfo;
+import co.caio.tablier.model.RecipeInfo.SimilarInfo;
 import co.caio.tablier.model.SearchResultsInfo;
 import co.caio.tablier.model.SiteInfo;
 import co.caio.tablier.view.Error;
@@ -14,7 +15,6 @@ import co.caio.tablier.view.Search;
 import com.fizzed.rocker.RockerModel;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
@@ -64,7 +64,7 @@ class ModelView {
     }
   }
 
-  private static final String GO_SLUG_ID_PATH = "/go/{slug}/{recipeId}";
+  private static final String URI_RECIPE_SLUG_ID = "/recipe/{slug}/{recipeId}";
 
   RockerModel renderSearch(
       SearchQuery query,
@@ -86,8 +86,6 @@ class ModelView {
     boolean isLastPage = query.offset() + pageSize >= result.totalHits();
     int currentPage = (query.offset() / pageSize) + 1;
 
-    var recipeGoUriComponents = uriBuilder.cloneBuilder().replacePath(GO_SLUG_ID_PATH).build();
-
     var searchBuilder =
         new SearchResultsInfo.Builder()
             .numRecipes(numRecipes)
@@ -105,7 +103,8 @@ class ModelView {
           uriBuilder.replaceQueryParam("page", currentPage - 1).build().toUriString());
     }
 
-    searchBuilder.recipes(renderRecipes(result.recipeIds(), db, recipeGoUriComponents));
+    var recipeInfoUriComponents = uriBuilder.cloneBuilder().replacePath(URI_RECIPE_SLUG_ID).build();
+    searchBuilder.recipes(renderRecipes(result.recipeIds(), db, recipeInfoUriComponents));
 
     // Sidebar links always lead to the first page
     uriBuilder.replaceQueryParam("page");
@@ -139,7 +138,7 @@ class ModelView {
         .stream()
         .map(db::findById)
         .flatMap(Optional::stream)
-        .map(r -> new RecipeMetadataRecipeInfoAdapter(r, uriComponents))
+        .map(r -> buildAdapter(r, uriComponents, db))
         .collect(Collectors.toList());
   }
 
@@ -152,22 +151,45 @@ class ModelView {
             .build());
   }
 
-  RockerModel renderSingleRecipe(RecipeMetadata recipe, UriComponentsBuilder builder) {
+  RockerModel renderSingleRecipe(
+      RecipeMetadata recipe, UriComponentsBuilder builder, RecipeMetadataService db) {
     return Recipe.template(
         new SiteInfo.Builder().title(recipe.getName()).searchIsAutoFocus(false).build(),
-        new RecipeMetadataRecipeInfoAdapter(recipe, builder.replacePath(GO_SLUG_ID_PATH).build()));
+        buildAdapter(recipe, builder.replacePath(URI_RECIPE_SLUG_ID).build(), db));
+  }
+
+  List<SimilarInfo> retrieveSimilarRecipes(
+      List<Long> ids, RecipeMetadataService db, UriComponents infoComponents) {
+    return ids.stream()
+        .map(db::findById)
+        .flatMap(Optional::stream)
+        .map(
+            r -> {
+              var url = infoComponents.expand(r.getSlug(), r.getRecipeId()).toUriString();
+              return SimilarInfo.of(r.getName(), r.getSiteName(), url);
+            })
+        .collect(Collectors.toList());
+  }
+
+  RecipeMetadataRecipeInfoAdapter buildAdapter(
+      RecipeMetadata recipe, UriComponents infoUrlComponents, RecipeMetadataService db) {
+    var similar = retrieveSimilarRecipes(recipe.getSimilarRecipeIds(), db, infoUrlComponents);
+    return new RecipeMetadataRecipeInfoAdapter(recipe, infoUrlComponents, similar);
   }
 
   static class RecipeMetadataRecipeInfoAdapter implements RecipeInfo {
     private final RecipeMetadata metadata;
     private final String infoUrl;
+    private final List<SimilarInfo> similarRecipes;
 
-    RecipeMetadataRecipeInfoAdapter(RecipeMetadata metadata, UriComponents uriComponents) {
+    RecipeMetadataRecipeInfoAdapter(
+        RecipeMetadata metadata,
+        UriComponents infoUrlComponents,
+        List<SimilarInfo> similarRecipes) {
       this.metadata = metadata;
+      this.similarRecipes = similarRecipes;
       this.infoUrl =
-          uriComponents
-              .expand(Map.of("slug", metadata.getSlug(), "recipeId", metadata.getRecipeId()))
-              .toUriString();
+          infoUrlComponents.expand(metadata.getSlug(), metadata.getRecipeId()).toUriString();
     }
 
     @Override
@@ -233,6 +255,16 @@ class ModelView {
     @Override
     public List<String> ingredients() {
       return metadata.getIngredients();
+    }
+
+    @Override
+    public boolean hasSimilarRecipes() {
+      return similarRecipes.size() > 0;
+    }
+
+    @Override
+    public List<SimilarInfo> similarRecipes() {
+      return similarRecipes;
     }
   }
 
