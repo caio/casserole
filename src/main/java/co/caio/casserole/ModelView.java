@@ -163,11 +163,7 @@ class ModelView {
     return ids.stream()
         .map(db::findById)
         .flatMap(Optional::stream)
-        .map(
-            r -> {
-              var url = infoComponents.expand(r.getSlug(), r.getRecipeId()).toUriString();
-              return SimilarInfo.of(r.getName(), r.getSiteName(), url);
-            })
+        .map(r -> new RecipeMetadataSimilarInfoAdapter(r, infoComponents))
         .collect(Collectors.toList());
   }
 
@@ -175,6 +171,32 @@ class ModelView {
       RecipeMetadata recipe, UriComponents infoUrlComponents, RecipeMetadataService db) {
     var similar = retrieveSimilarRecipes(recipe.getSimilarRecipeIds(), db, infoUrlComponents);
     return new RecipeMetadataRecipeInfoAdapter(recipe, infoUrlComponents, similar);
+  }
+
+  static class RecipeMetadataSimilarInfoAdapter extends SimilarInfo {
+
+    private final RecipeMetadata delegate;
+    private final UriComponents infoUriComponents;
+
+    RecipeMetadataSimilarInfoAdapter(RecipeMetadata delegate, UriComponents infoUriComponents) {
+      this.delegate = delegate;
+      this.infoUriComponents = infoUriComponents;
+    }
+
+    @Override
+    public String name() {
+      return delegate.getName();
+    }
+
+    @Override
+    public String siteName() {
+      return delegate.getSiteName();
+    }
+
+    @Override
+    public String infoUrl() {
+      return infoUriComponents.expand(delegate.getSlug(), delegate.getRecipeId()).toUriString();
+    }
   }
 
   static class RecipeMetadataRecipeInfoAdapter implements RecipeInfo {
