@@ -6,13 +6,11 @@ import co.caio.cerberus.model.SearchResult;
 import co.caio.tablier.model.ErrorInfo;
 import co.caio.tablier.model.RecipeInfo;
 import co.caio.tablier.model.SearchResultsInfo;
-import co.caio.tablier.model.SimilarityInfo;
 import co.caio.tablier.model.SiteInfo;
 import co.caio.tablier.view.Error;
 import co.caio.tablier.view.Index;
 import co.caio.tablier.view.Recipe;
 import co.caio.tablier.view.Search;
-import co.caio.tablier.view.Similarity;
 import com.fizzed.rocker.RockerModel;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import java.util.List;
@@ -160,25 +158,6 @@ class ModelView {
         new RecipeMetadataRecipeInfoAdapter(recipe, builder.replacePath(GO_SLUG_ID_PATH).build()));
   }
 
-  RockerModel renderSimilar(
-      RecipeMetadata recipe, RecipeMetadataService db, UriComponentsBuilder componentsBuilder) {
-    var siteInfo =
-        new SiteInfo.Builder()
-            .title("Recipes similar to: " + recipe.getName())
-            .searchIsAutoFocus(false)
-            .build();
-
-    var uriBuilder = componentsBuilder.replacePath(GO_SLUG_ID_PATH).build();
-
-    var similarityInfo =
-        new SimilarityInfo.Builder()
-            .recipe(new RecipeMetadataRecipeInfoAdapter(recipe, uriBuilder))
-            .addAllSimilar(renderRecipes(recipe.getSimilarRecipeIds(), db, uriBuilder))
-            .build();
-
-    return Similarity.template(siteInfo, similarityInfo);
-  }
-
   static class RecipeMetadataRecipeInfoAdapter implements RecipeInfo {
     private final RecipeMetadata metadata;
     private final String goUrl;
@@ -214,11 +193,6 @@ class ModelView {
     @Override
     public String infoUrl() {
       return goUrl.replace("/go/", "/recipe/");
-    }
-
-    @Override
-    public String similarUrl() {
-      return goUrl.replace("/go/", "/similar/");
     }
 
     @Override
