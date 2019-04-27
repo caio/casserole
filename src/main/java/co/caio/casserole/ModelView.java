@@ -160,11 +160,11 @@ class ModelView {
 
   static class RecipeMetadataRecipeInfoAdapter implements RecipeInfo {
     private final RecipeMetadata metadata;
-    private final String goUrl;
+    private final String infoUrl;
 
     RecipeMetadataRecipeInfoAdapter(RecipeMetadata metadata, UriComponents uriComponents) {
       this.metadata = metadata;
-      this.goUrl =
+      this.infoUrl =
           uriComponents
               .expand(Map.of("slug", metadata.getSlug(), "recipeId", metadata.getRecipeId()))
               .toUriString();
@@ -181,18 +181,13 @@ class ModelView {
     }
 
     @Override
-    public String goUrl() {
-      return goUrl;
-    }
-
-    @Override
     public String crawlUrl() {
       return metadata.getCrawlUrl();
     }
 
     @Override
     public String infoUrl() {
-      return goUrl.replace("/go/", "/recipe/");
+      return infoUrl;
     }
 
     @Override

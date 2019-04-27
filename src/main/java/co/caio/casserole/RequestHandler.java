@@ -6,7 +6,6 @@ import co.caio.cerberus.db.RecipeMetadata;
 import com.fizzed.rocker.RockerModel;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.reactor.circuitbreaker.operator.CircuitBreakerOperator;
-import java.net.URI;
 import java.time.Duration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.MediaType;
@@ -49,7 +48,6 @@ public class RequestHandler {
         .GET("/search", handler::search)
         .GET("/", handler::index)
         .GET("/recipe/{slug}/{recipeId}", handler::recipe)
-        .GET("/go/{slug}/{recipeId}", handler::go)
         .HEAD("/", handler::index)
         .HEAD("/search", handler::search)
         .HEAD("/recipe/{slug}/{recipeId}", handler::recipe)
@@ -103,11 +101,6 @@ public class RequestHandler {
         .body(
             BodyInserters.fromObject(
                 modelView.renderSingleRecipe(recipe, UriComponentsBuilder.fromUri(request.uri()))));
-  }
-
-  Mono<ServerResponse> go(ServerRequest request) {
-    var recipe = fromRequest(request);
-    return ServerResponse.permanentRedirect(URI.create(recipe.getCrawlUrl())).build();
   }
 
   static class RecipeNotFoundError extends RuntimeException {

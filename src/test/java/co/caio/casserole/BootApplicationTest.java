@@ -135,29 +135,6 @@ class BootApplicationTest {
     assertNotNull(doc.select("form button[disabled]").first());
   }
 
-  @Test
-  void goActionRedirectsProperly() {
-    var recipe = getBasicRecipe();
-
-    given(metadataService.findById(recipe.recipeId()))
-        .willReturn(Optional.of(RecipeMetadata.fromRecipe(recipe)));
-
-    var goUri = String.format("/go/%s/%d", recipe.slug(), recipe.recipeId());
-    testClient
-        .get()
-        .uri(goUri)
-        .exchange()
-        .expectStatus()
-        .isPermanentRedirect()
-        .expectHeader()
-        .valueMatches("Location", recipe.crawlUrl());
-  }
-
-  @Test
-  void goActionInvalidUriYieldsNotFound() {
-    testClient.get().uri("/go/bad-slug/42").exchange().expectStatus().isNotFound();
-  }
-
   private Document parseIndexBody() {
     var body =
         testClient
