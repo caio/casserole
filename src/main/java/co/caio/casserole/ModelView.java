@@ -201,17 +201,16 @@ class ModelView {
 
   static class RecipeMetadataRecipeInfoAdapter implements RecipeInfo {
     private final RecipeMetadata metadata;
-    private final String infoUrl;
+    private final UriComponents infoUriComponents;
     private final List<SimilarInfo> similarRecipes;
 
     RecipeMetadataRecipeInfoAdapter(
         RecipeMetadata metadata,
-        UriComponents infoUrlComponents,
+        UriComponents infoUriComponents,
         List<SimilarInfo> similarRecipes) {
       this.metadata = metadata;
       this.similarRecipes = similarRecipes;
-      this.infoUrl =
-          infoUrlComponents.expand(metadata.getSlug(), metadata.getRecipeId()).toUriString();
+      this.infoUriComponents = infoUriComponents;
     }
 
     @Override
@@ -231,7 +230,7 @@ class ModelView {
 
     @Override
     public String infoUrl() {
-      return infoUrl;
+      return infoUriComponents.expand(metadata.getSlug(), metadata.getRecipeId()).toUriString();
     }
 
     @Override
