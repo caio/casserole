@@ -27,22 +27,18 @@ class SearchParameterParser {
   }
 
   private SearchQuery _buildQuery(Map<String, String> params) {
-    var builder = new SearchQuery.Builder().maxResults(pageSize).maxFacets(5);
-
-    var fulltext = params.getOrDefault("q", "").strip();
-
-    if (fulltext.length() < 3) {
-      throw new SearchParameterException("At least three characters are required");
-    }
-
-    builder.fulltext(fulltext);
+    var builder =
+        new SearchQuery.Builder()
+            .fulltext("") // Overwritten if &q=; is provided
+            .maxResults(pageSize)
+            .maxFacets(5);
 
     // TODO jdk12 switches plz
     params.forEach(
         (param, value) -> {
           switch (param) {
             case "q":
-              // Ignored: handled outside the switch
+              builder.fulltext(value);
               break;
             case "sort":
               builder.sort(parseSortOrder(value));

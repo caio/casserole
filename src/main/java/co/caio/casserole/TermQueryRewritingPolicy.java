@@ -21,6 +21,8 @@ public class TermQueryRewritingPolicy implements SearchPolicy {
 
   private final int maxMatchingDocs;
 
+  private static final Query DEFAULT_QUERY = new MatchAllDocsQuery();
+
   public TermQueryRewritingPolicy(int maxMatchingDocs) {
     if (maxMatchingDocs < 1) {
       throw new IllegalStateException("maxMatchingDocs must be > 0");
@@ -30,9 +32,18 @@ public class TermQueryRewritingPolicy implements SearchPolicy {
 
   @Override
   public Query rewriteParsedFulltextQuery(Query query) {
-    if (query instanceof BooleanQuery) {
+    if (query instanceof MatchNoDocsQuery) {
+      return DEFAULT_QUERY;
+    } else if (query instanceof BooleanQuery) {
       return new MagicQuery((BooleanQuery) query, maxMatchingDocs);
+    } else {
+      return query;
     }
+  }
+
+  @Override
+  public Query rewriteParsedSimilarityQuery(Query query) {
+    // FIXME tune when allowing arbitrary similarity queries
     return query;
   }
 
@@ -130,7 +141,7 @@ public class TermQueryRewritingPolicy implements SearchPolicy {
       if (expensiveClauses.get(0).getOccur() == Occur.MUST_NOT) {
         return new MatchNoDocsQuery();
       } else {
-        return new MatchAllDocsQuery();
+        return DEFAULT_QUERY;
       }
     }
 
