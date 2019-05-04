@@ -99,4 +99,13 @@ class TermQueryRewritingPolicyTest {
   void multipleNegatedHeavyTermsBecomeMatchNoDocs() {
     assertEquals(0, searcher.search(fulltext("-until -cup")).totalHits());
   }
+
+  @Test
+  void emptyQueryIsHandledAsMatchAllDocs() {
+    // A query with no fulltext() doesn't trigger the fulltext parsing
+    // logic, so the policy is never called for a truly empty
+    // query (i.e.: new SearchQuery.Builder().build();)
+    var query = new SearchQuery.Builder().fulltext("").build();
+    assertEquals(searcher.numDocs(), searcher.search(query).totalHits());
+  }
 }

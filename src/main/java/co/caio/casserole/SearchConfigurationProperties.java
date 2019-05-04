@@ -15,12 +15,17 @@ public class SearchConfigurationProperties {
 
   @NotNull Duration timeout;
   @NotNull @Positive int pageSize;
+  @NotNull @Positive int cacheSize;
 
   LuceneConfigurationProperties lucene;
   ChronicleConfigurationProperties chronicle;
 
   public void setLucene(LuceneConfigurationProperties lucene) {
     this.lucene = lucene;
+  }
+
+  public void setCacheSize(int cacheSize) {
+    this.cacheSize = cacheSize;
   }
 
   public void setChronicle(ChronicleConfigurationProperties chronicle) {

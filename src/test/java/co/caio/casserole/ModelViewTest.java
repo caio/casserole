@@ -12,6 +12,7 @@ import co.caio.cerberus.model.SearchResult;
 import com.fizzed.rocker.RockerModel;
 import com.fizzed.rocker.runtime.StringBuilderOutput;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -82,7 +83,7 @@ class ModelViewTest {
         parseOutput(modelView.renderSearch(unusedQuery, result, recipeMetadataService, uriBuilder));
     assertTrue(doc.title().startsWith(ModelView.SEARCH_PAGE_TITLE));
     assertTrue(
-        doc.selectFirst("section#results div.notification.content.is-danger")
+        doc.selectFirst("section#results div.notification.content")
             .text()
             .contains("Try changing your query"));
   }
@@ -221,20 +222,32 @@ class ModelViewTest {
     var recipe = recipeMetadataService.findById(model.recipeId());
     assertTrue(recipe.isPresent());
     var doc =
-        parseOutput(modelView.renderSingleRecipe(recipe.get(), UriComponentsBuilder.newInstance()));
+        parseOutput(
+            modelView.renderSingleRecipe(
+                recipe.get(), UriComponentsBuilder.newInstance(), recipeMetadataService));
     assertTrue(doc.title().startsWith(model.name()));
   }
 
   @Test
-  void correctNumAppliedFilters() {
-    var builder = new SearchQuery.Builder().fulltext("salt");
+  void retrieveSimilarRecipes() {
+    Util.getSampleRecipes()
+        .map(r -> recipeMetadataService.findById(r.recipeId()))
+        .flatMap(Optional::stream)
+        .forEach(
+            metadata -> {
+              var simIds = metadata.getSimilarRecipeIds();
 
-    assertEquals(0, ModelView.deriveAppliedFilters(builder.build()));
-    assertEquals(
-        1, ModelView.deriveAppliedFilters(builder.numIngredients(RangedSpec.of(1, 10)).build()));
-    assertEquals(
-        2,
-        ModelView.deriveAppliedFilters(builder.carbohydrateContent(RangedSpec.of(0, 30)).build()));
-    assertEquals(3, ModelView.deriveAppliedFilters(builder.addMatchDiet("keto").build()));
+              var similarRecipes =
+                  modelView.retrieveSimilarRecipes(
+                      simIds,
+                      recipeMetadataService,
+                      UriComponentsBuilder.fromUriString("/recipe/{0}/{1}").build());
+
+              for (int i = 0; i < simIds.size(); i++) {
+                var wanted = recipeMetadataService.findById(simIds.get(i)).orElseThrow();
+                var sim = similarRecipes.get(i);
+                assertEquals(wanted.getName(), sim.name());
+              }
+            });
   }
 }

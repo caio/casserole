@@ -62,7 +62,6 @@ class BootApplicationTest {
   void badInputTriggersError400() {
     var badQueries =
         List.of(
-            "q=oi", // query length must be > 2
             "q=oil&n=0", // n is >= 1
             "q=oil&n=1.2", // n is not an int
             "q=oil&n=notANumber", // n is >= 1
@@ -135,29 +134,6 @@ class BootApplicationTest {
     assertNotNull(doc.select("form button[disabled]").first());
   }
 
-  @Test
-  void goActionRedirectsProperly() {
-    var recipe = getBasicRecipe();
-
-    given(metadataService.findById(recipe.recipeId()))
-        .willReturn(Optional.of(RecipeMetadata.fromRecipe(recipe)));
-
-    var goUri = String.format("/go/%s/%d", recipe.slug(), recipe.recipeId());
-    testClient
-        .get()
-        .uri(goUri)
-        .exchange()
-        .expectStatus()
-        .isPermanentRedirect()
-        .expectHeader()
-        .valueMatches("Location", recipe.crawlUrl());
-  }
-
-  @Test
-  void goActionInvalidUriYieldsNotFound() {
-    testClient.get().uri("/go/bad-slug/42").exchange().expectStatus().isNotFound();
-  }
-
   private Document parseIndexBody() {
     var body =
         testClient
@@ -175,9 +151,19 @@ class BootApplicationTest {
 
   @Test
   void canFetchGzippedCss() {
+    assertIsGzip("/css/main.css");
+  }
+
+  @Test
+  void staticPagesAreGzipped() {
+    assertIsGzip("/page/about");
+    assertIsGzip("/page/help");
+  }
+
+  private void assertIsGzip(String uri) {
     testClient
         .get()
-        .uri("/css/main.css")
+        .uri(uri)
         .header(HttpHeaders.ACCEPT_ENCODING, "gzip")
         .exchange()
         .expectStatus()
@@ -302,10 +288,14 @@ class BootApplicationTest {
   }
 
   @Test
-  void searchHeadWorksWithValidParams() {
-    assertHead("/search", HttpStatus.BAD_REQUEST);
-    assertHead("/search?q=no", HttpStatus.BAD_REQUEST);
-    assertHead("/search?q=banana", HttpStatus.OK);
+  void smallOrEmptyQueryWorks() {
+    var validUris = List.of("/search", "/search?q=", "/search?q=a", "/search?q=ab");
+
+    validUris.forEach(
+        uri -> {
+          assertHead(uri, HttpStatus.OK);
+          assertGet(uri, HttpStatus.OK);
+        });
   }
 
   static Recipe getBasicRecipe() {
