@@ -19,7 +19,6 @@ import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalInt;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponents;
@@ -110,26 +109,9 @@ class ModelView {
     uriBuilder.replaceQueryParam("page");
     searchBuilder.sidebar(sidebarRenderer.render(query, result, uriBuilder));
 
-    searchBuilder.numAppliedFilters(deriveAppliedFilters(query));
+    searchBuilder.numAppliedFilters((int) query.numSelectedFilters());
 
     return Search.template(siteInfo, searchBuilder.build());
-  }
-
-  static int deriveAppliedFilters(SearchQuery query) {
-    // XXX This is very error prone as I'll need to keep in sync with
-    //     the SearchQuery evolution manually. It could be computed
-    //     during the build phase for better speed AND correctness,
-    //     but right now it's too annoying to do it with immutables
-    return (int)
-            Stream.of(
-                    query.numIngredients(),
-                    query.totalTime(),
-                    query.calories(),
-                    query.fatContent(),
-                    query.carbohydrateContent())
-                .flatMap(Optional::stream)
-                .count()
-        + query.dietThreshold().size(); // First bite
   }
 
   private Iterable<RecipeInfo> renderRecipes(

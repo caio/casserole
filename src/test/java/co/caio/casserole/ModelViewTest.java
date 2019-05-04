@@ -229,19 +229,6 @@ class ModelViewTest {
   }
 
   @Test
-  void correctNumAppliedFilters() {
-    var builder = new SearchQuery.Builder().fulltext("salt");
-
-    assertEquals(0, ModelView.deriveAppliedFilters(builder.build()));
-    assertEquals(
-        1, ModelView.deriveAppliedFilters(builder.numIngredients(RangedSpec.of(1, 10)).build()));
-    assertEquals(
-        2,
-        ModelView.deriveAppliedFilters(builder.carbohydrateContent(RangedSpec.of(0, 30)).build()));
-    assertEquals(3, ModelView.deriveAppliedFilters(builder.addMatchDiet("keto").build()));
-  }
-
-  @Test
   void retrieveSimilarRecipes() {
     Util.getSampleRecipes()
         .map(r -> recipeMetadataService.findById(r.recipeId()))
