@@ -83,7 +83,7 @@ class ModelViewTest {
         parseOutput(modelView.renderSearch(unusedQuery, result, recipeMetadataService, uriBuilder));
     assertTrue(doc.title().startsWith(ModelView.SEARCH_PAGE_TITLE));
     assertTrue(
-        doc.selectFirst("section#results div.notification.content.is-danger")
+        doc.selectFirst("section#results div.notification.content")
             .text()
             .contains("Try changing your query"));
   }
