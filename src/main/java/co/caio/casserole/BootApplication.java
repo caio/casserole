@@ -2,9 +2,15 @@ package co.caio.casserole;
 
 import co.caio.cerberus.db.ChronicleRecipeMetadataDatabase;
 import co.caio.cerberus.db.RecipeMetadataDatabase;
+import co.caio.cerberus.model.SearchQuery;
+import co.caio.cerberus.model.SearchResult;
 import co.caio.cerberus.search.Searcher;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.micrometer.CircuitBreakerMetrics;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.binder.cache.CaffeineCacheMetrics;
 import java.time.Duration;
 import java.util.List;
 import org.springframework.boot.SpringApplication;
@@ -60,5 +66,14 @@ public class BootApplication {
   @Bean
   CircuitBreakerMetrics registerMetrics(CircuitBreaker breaker) {
     return CircuitBreakerMetrics.ofIterable(List.of(breaker));
+  }
+
+  @Bean
+  Cache<SearchQuery, SearchResult> searchResultCache(
+      SearchConfigurationProperties conf, MeterRegistry registry) {
+    Cache<SearchQuery, SearchResult> cache =
+        Caffeine.newBuilder().maximumSize(conf.cacheSize).initialCapacity(conf.cacheSize).build();
+
+    return CaffeineCacheMetrics.monitor(registry, cache, "search");
   }
 }
