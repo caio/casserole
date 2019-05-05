@@ -10,20 +10,23 @@ import org.apache.lucene.index.TermStates;
 import org.apache.lucene.index.Terms;
 import org.apache.lucene.index.TermsEnum;
 import org.apache.lucene.search.BooleanClause;
-import org.apache.lucene.search.BooleanClause.Occur;
 import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.MatchAllDocsQuery;
 import org.apache.lucene.search.MatchNoDocsQuery;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.TermQuery;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TermQueryRewritingPolicy implements SearchPolicy {
 
   private final int maxMatchingDocs;
 
-  private static final Query DEFAULT_QUERY = new MatchAllDocsQuery();
+  static final Query DEFAULT_QUERY = new MatchAllDocsQuery();
 
-  public TermQueryRewritingPolicy(int maxMatchingDocs) {
+  private static final Logger logger = LoggerFactory.getLogger(TermQueryRewritingPolicy.class);
+
+  TermQueryRewritingPolicy(int maxMatchingDocs) {
     if (maxMatchingDocs < 1) {
       throw new IllegalStateException("maxMatchingDocs must be > 0");
     }
@@ -35,7 +38,7 @@ public class TermQueryRewritingPolicy implements SearchPolicy {
     if (query instanceof MatchNoDocsQuery) {
       return DEFAULT_QUERY;
     } else if (query instanceof BooleanQuery) {
-      return new MagicQuery((BooleanQuery) query, maxMatchingDocs);
+      return new PerformanceInspectorQuery((BooleanQuery) query, maxMatchingDocs);
     } else {
       return query;
     }
@@ -60,33 +63,31 @@ public class TermQueryRewritingPolicy implements SearchPolicy {
     }
   }
 
-  static class MagicQuery extends Query {
-    private final int maxDocFrequency;
-    private final BooleanQuery delegate;
+  static class PerformanceInspectorQuery extends Query {
+    final int maxDocFrequency;
+    final BooleanQuery delegate;
 
-    MagicQuery(BooleanQuery delegate, int maxDocFrequency) {
+    PerformanceInspectorQuery(BooleanQuery delegate, int maxDocFrequency) {
       this.maxDocFrequency = maxDocFrequency;
       this.delegate = delegate;
     }
 
     @Override
     public Query rewrite(IndexReader ir) throws IOException {
-
-      int clausesAdded = 0;
-
       var simplified = delegate.rewrite(ir);
 
       if (!(simplified instanceof BooleanQuery)) {
         return simplified;
       }
 
-      List<BooleanClause> tbqs = new ArrayList<>();
+      List<BooleanClause> termClauses = new ArrayList<>();
 
+      int nonTermQueries = 0;
       for (var clause : ((BooleanQuery) simplified).clauses()) {
         var q1 = clause.getQuery();
 
         if (q1 instanceof TermQuery) {
-          tbqs.add(clause);
+          termClauses.add(clause);
         } else if (q1 instanceof BooleanQuery) {
           var bq = (BooleanQuery) q1;
 
@@ -94,55 +95,37 @@ public class TermQueryRewritingPolicy implements SearchPolicy {
           // as they get expanded to [not(term) AND matchAllDocs()]
           // XXX maybe verify that get(1).getQuery() == MatchAllDocsQuery
           if (bq.clauses().size() == 2 && bq.clauses().get(0).getQuery() instanceof TermQuery) {
-            tbqs.add(bq.clauses().get(0));
+            termClauses.add(bq.clauses().get(0));
           } else {
             // XXX maybe throw here or at least log if get(0).getQuery() != PhraseQuery
-            clausesAdded++;
+            nonTermQueries++;
           }
         } else {
-          clausesAdded++;
+          nonTermQueries++;
         }
       }
 
-      // More clauses other than TermQuery, nothing to worry about
-      if (clausesAdded > 0 || tbqs.size() < 2) {
+      // More clauses other than TermQuery and/or just one
+      // TermQuery: cheap to execute
+      if (nonTermQueries > 0 || termClauses.size() < 2) {
         return simplified;
       }
 
-      List<BooleanClause> expensiveClauses = null;
+      int numExpensiveTermQueries = 0;
+      var stats = collectTermStates(ir, termClauses);
 
-      var stats = collectTermStates(ir, tbqs);
-
-      for (int i = 0; i < stats.length; i++) {
-        var clause = tbqs.get(i);
-        if (stats[i] != null && stats[i].docFreq() > maxDocFrequency) {
-          if (expensiveClauses == null) {
-            expensiveClauses = new ArrayList<>();
-          }
-          expensiveClauses.add(clause);
+      for (TermStates stat : stats) {
+        if (stat != null && stat.docFreq() > maxDocFrequency) {
+          numExpensiveTermQueries++;
         }
       }
 
-      // One or no expensive clauses: nothing to worry about either
-      if (expensiveClauses == null || expensiveClauses.size() < 2) {
-        return simplified;
+      // More than one expensive term query, this may be slow
+      if (numExpensiveTermQueries > 1) {
+        logger.warn("Executing expensive lucene query:" + simplified);
       }
 
-      // XXX Haven't thought about what to do when we mix occurs, like:
-      //     `until -minut`, so just throw instead :x
-      // TODO Log
-      if (expensiveClauses.stream().map(BooleanClause::getOccur).distinct().count() != 1) {
-        throw new PolicyException("Refusing to execute confusing expensive query");
-      }
-
-      // XXX Maybe just always throw here?
-      // TODO Log
-
-      if (expensiveClauses.get(0).getOccur() == Occur.MUST_NOT) {
-        return new MatchNoDocsQuery();
-      } else {
-        return DEFAULT_QUERY;
-      }
+      return simplified;
     }
 
     private TermStates[] collectTermStates(IndexReader ir, List<BooleanClause> termClauses)
@@ -200,7 +183,12 @@ public class TermQueryRewritingPolicy implements SearchPolicy {
 
     @Override
     public boolean equals(Object obj) {
-      return delegate.equals(obj);
+      if (obj instanceof PerformanceInspectorQuery) {
+        return ((PerformanceInspectorQuery) obj).maxDocFrequency == maxDocFrequency
+            && delegate.equals(obj);
+      } else {
+        return false;
+      }
     }
 
     @Override
