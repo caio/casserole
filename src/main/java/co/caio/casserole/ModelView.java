@@ -92,6 +92,16 @@ class ModelView {
             .paginationEnd(result.recipeIds().size() + query.offset())
             .numMatching(result.totalHits());
 
+    var recipeInfoUriComponents = uriBuilder.cloneBuilder().replacePath(URI_RECIPE_SLUG_ID).build();
+    searchBuilder.recipes(renderRecipes(result.recipeIds(), db, recipeInfoUriComponents));
+
+    // Sidebar links always lead to the first page
+    uriBuilder.replaceQueryParam("page");
+    searchBuilder.sidebar(sidebarRenderer.render(query, result, uriBuilder));
+
+    searchBuilder.numAppliedFilters((int) query.numSelectedFilters());
+
+    // NOTE that the following modifies the uriBuilder in place
     if (!isLastPage) {
       searchBuilder.nextPageHref(
           uriBuilder.replaceQueryParam("page", currentPage + 1).build().toUriString());
@@ -101,15 +111,6 @@ class ModelView {
       searchBuilder.previousPageHref(
           uriBuilder.replaceQueryParam("page", currentPage - 1).build().toUriString());
     }
-
-    var recipeInfoUriComponents = uriBuilder.cloneBuilder().replacePath(URI_RECIPE_SLUG_ID).build();
-    searchBuilder.recipes(renderRecipes(result.recipeIds(), db, recipeInfoUriComponents));
-
-    // Sidebar links always lead to the first page
-    uriBuilder.replaceQueryParam("page");
-    searchBuilder.sidebar(sidebarRenderer.render(query, result, uriBuilder));
-
-    searchBuilder.numAppliedFilters((int) query.numSelectedFilters());
 
     return Search.template(siteInfo, searchBuilder.build());
   }

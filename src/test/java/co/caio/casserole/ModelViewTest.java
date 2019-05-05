@@ -7,7 +7,6 @@ import co.caio.cerberus.Util;
 import co.caio.cerberus.db.HashMapRecipeMetadataDatabase;
 import co.caio.cerberus.db.RecipeMetadata;
 import co.caio.cerberus.model.SearchQuery;
-import co.caio.cerberus.model.SearchQuery.RangedSpec;
 import co.caio.cerberus.model.SearchResult;
 import com.fizzed.rocker.RockerModel;
 import com.fizzed.rocker.runtime.StringBuilderOutput;
@@ -249,5 +248,28 @@ class ModelViewTest {
                 assertEquals(wanted.getName(), sim.name());
               }
             });
+  }
+
+  @Test
+  void regressionInfoUrisAreNotPoisonedByLogic() {
+    var query = new SearchQuery.Builder().fulltext("unused").build();
+    var builder =
+        new SearchResult.Builder().totalHits(3); // pageSize is 2, so 3 means there's a next page
+    Util.getSampleRecipes().limit(2).forEach(r -> builder.addRecipe(r.recipeId()));
+
+    var doc =
+        parseOutput(
+            modelView.renderSearch(query, builder.build(), recipeMetadataService, uriBuilder));
+
+    var found = doc.select("section#results article.media .media-right a");
+
+    assertFalse(found.isEmpty());
+    found.forEach(
+        element -> {
+          assertTrue(element.is("a"));
+          var href = element.attr("href");
+          assertFalse(href.isEmpty());
+          assertFalse(href.contains("page="));
+        });
   }
 }
