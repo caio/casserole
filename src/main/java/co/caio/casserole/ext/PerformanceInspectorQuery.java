@@ -39,16 +39,10 @@ public class PerformanceInspectorQuery extends Query {
 
   @Override
   public Query rewrite(IndexReader ir) throws IOException {
-    var simplified = delegate.rewrite(ir);
-
-    if (!(simplified instanceof BooleanQuery)) {
-      return simplified;
-    }
-
     List<BooleanClause> termClauses = new ArrayList<>();
 
     int nonTermQueries = 0;
-    for (var clause : ((BooleanQuery) simplified).clauses()) {
+    for (var clause : delegate.clauses()) {
       var q1 = clause.getQuery();
 
       if (q1 instanceof TermQuery) {
@@ -73,7 +67,7 @@ public class PerformanceInspectorQuery extends Query {
     // More clauses other than TermQuery and/or just one
     // TermQuery: cheap to execute
     if (nonTermQueries > 0 || termClauses.size() < 2) {
-      return simplified;
+      return delegate;
     }
 
     int numExpensiveTermQueries = 0;
@@ -87,10 +81,10 @@ public class PerformanceInspectorQuery extends Query {
 
     // More than one expensive term query, this may be slow
     if (numExpensiveTermQueries > 1) {
-      logger.warn("Executing expensive lucene query:" + simplified);
+      logger.warn("Executing expensive lucene query:" + delegate);
     }
 
-    return simplified;
+    return delegate;
   }
 
   private TermStates[] collectTermStates(IndexReader ir, List<BooleanClause> termClauses)
