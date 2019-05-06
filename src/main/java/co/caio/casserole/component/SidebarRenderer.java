@@ -1,7 +1,7 @@
-package co.caio.casserole;
+package co.caio.casserole.component;
 
-import co.caio.casserole.IndexFacet.Category;
-import co.caio.casserole.IndexFacet.CategoryOption;
+import co.caio.casserole.index.Facet.Category;
+import co.caio.casserole.index.Facet.CategoryOption;
 import co.caio.cerberus.model.FacetData;
 import co.caio.cerberus.model.SearchQuery;
 import co.caio.cerberus.model.SearchQuery.RangedSpec;
@@ -11,22 +11,23 @@ import co.caio.tablier.model.SidebarInfo;
 import java.util.Map.Entry;
 import org.springframework.web.util.UriComponentsBuilder;
 
-class SidebarRenderer {
+public class SidebarRenderer {
 
-  static final String NUTRITION_INFO_NAME = "Limit Nutrition (per serving)";
+  public static final String NUTRITION_INFO_NAME = "Limit Nutrition (per serving)";
 
   private static final SearchResult EMPTY_SEARCH_RESULT = new SearchResult.Builder().build();
   private static final RangedSpec UNSELECTED_RANGE = RangedSpec.of(0, 0);
   private static final FacetData EMPTY_FACET_DATA =
       new FacetData.Builder().dimension("EMPTY").build();
 
-  SidebarRenderer() {}
+  public SidebarRenderer() {}
 
-  SidebarInfo render(SearchQuery query, UriComponentsBuilder uriBuilder) {
+  public SidebarInfo render(SearchQuery query, UriComponentsBuilder uriBuilder) {
     return render(query, EMPTY_SEARCH_RESULT, uriBuilder);
   }
 
-  SidebarInfo render(SearchQuery query, SearchResult result, UriComponentsBuilder uriBuilder) {
+  public SidebarInfo render(
+      SearchQuery query, SearchResult result, UriComponentsBuilder uriBuilder) {
     var builder = new SidebarInfo.Builder();
 
     var sort = new FilterInfo.Builder().name(Category.SORT.getTitle()).isRemovable(false);

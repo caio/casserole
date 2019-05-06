@@ -1,9 +1,9 @@
-package co.caio.casserole;
+package co.caio.casserole.component;
 
-import co.caio.casserole.ModelView.OverPaginationError;
-import co.caio.casserole.RequestHandler.RecipeNotFoundError;
-import co.caio.casserole.SearchParameterParser.SearchParameterException;
 import co.caio.casserole.TermQueryRewritingPolicy.PolicyException;
+import co.caio.casserole.component.ModelView.OverPaginationError;
+import co.caio.casserole.component.RequestHandler.RecipeNotFoundError;
+import co.caio.casserole.component.SearchParameterParser.SearchParameterException;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerOpenException;
 import java.util.Map;
 import java.util.Optional;

@@ -1,4 +1,4 @@
-package co.caio.casserole;
+package co.caio.casserole.component;
 
 import co.caio.cerberus.model.SearchQuery;
 import co.caio.cerberus.model.SearchQuery.RangedSpec;
@@ -9,14 +9,14 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 @Component
-class SearchParameterParser {
+public class SearchParameterParser {
   private final int pageSize;
 
-  SearchParameterParser(@Qualifier("searchPageSize") int pageSize) {
+  public SearchParameterParser(@Qualifier("searchPageSize") int pageSize) {
     this.pageSize = pageSize;
   }
 
-  SearchQuery buildQuery(Map<String, String> params) {
+  public SearchQuery buildQuery(Map<String, String> params) {
     try {
       return _buildQuery(params);
     } catch (SearchParameterException rethrown) {
@@ -90,7 +90,7 @@ class SearchParameterParser {
     }
   }
 
-  SortOrder parseSortOrder(String order) {
+  public SortOrder parseSortOrder(String order) {
     switch (order) {
       case "cook_time":
         return SortOrder.COOK_TIME;
@@ -108,7 +108,7 @@ class SearchParameterParser {
     throw new SearchParameterException("Invalid sort order: " + order);
   }
 
-  RangedSpec parseRange(String input) {
+  public RangedSpec parseRange(String input) {
     try {
       if (input.contains(",")) {
         var scanner = new Scanner(input).useDelimiter(",");
@@ -132,7 +132,7 @@ class SearchParameterParser {
     }
   }
 
-  static class SearchParameterException extends RuntimeException {
+  public static class SearchParameterException extends RuntimeException {
     SearchParameterException(String message) {
       super(message);
     }

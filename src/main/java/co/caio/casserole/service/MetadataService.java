@@ -1,4 +1,4 @@
-package co.caio.casserole;
+package co.caio.casserole.service;
 
 import co.caio.cerberus.db.RecipeMetadata;
 import co.caio.cerberus.db.RecipeMetadataDatabase;
@@ -6,15 +6,15 @@ import java.util.Optional;
 import org.springframework.stereotype.Service;
 
 @Service
-class RecipeMetadataService {
+public class MetadataService {
 
   private final RecipeMetadataDatabase metadataDatabase;
 
-  RecipeMetadataService(RecipeMetadataDatabase metadataDatabase) {
+  public MetadataService(RecipeMetadataDatabase metadataDatabase) {
     this.metadataDatabase = metadataDatabase;
   }
 
-  Optional<RecipeMetadata> findById(long recipeId) {
+  public Optional<RecipeMetadata> findById(long recipeId) {
     return metadataDatabase.findById(recipeId);
   }
 }

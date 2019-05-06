@@ -4,8 +4,9 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 
-import co.caio.casserole.SearchParameterParser.SearchParameterException;
 import co.caio.casserole.TermQueryRewritingPolicy.PolicyException;
+import co.caio.casserole.component.SearchParameterParser.SearchParameterException;
+import co.caio.casserole.service.MetadataService;
 import co.caio.cerberus.db.RecipeMetadata;
 import co.caio.cerberus.model.Recipe;
 import co.caio.cerberus.model.SearchResult;
@@ -36,7 +37,7 @@ class BootApplicationTest {
   @Autowired WebTestClient testClient;
   @Autowired CircuitBreaker breaker;
 
-  @MockBean RecipeMetadataService metadataService;
+  @MockBean MetadataService metadataService;
   @MockBean Searcher searcher;
 
   @TestConfiguration

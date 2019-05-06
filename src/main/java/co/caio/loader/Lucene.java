@@ -1,6 +1,6 @@
 package co.caio.loader;
 
-import co.caio.casserole.IndexFacet;
+import co.caio.casserole.index.Facet;
 import co.caio.cerberus.search.Indexer;
 import co.caio.loader.converter.NonExistingPath;
 import co.caio.loader.mixin.Source;
@@ -37,7 +37,7 @@ public class Lucene implements Runnable {
     System.out.println("Initializing index at " + target);
     var indexer =
         new Indexer.Builder()
-            .categoryExtractor(new IndexFacet().getCategoryExtractor())
+            .categoryExtractor(new Facet().getCategoryExtractor())
             .dataDirectory(target)
             .createMode()
             .build();

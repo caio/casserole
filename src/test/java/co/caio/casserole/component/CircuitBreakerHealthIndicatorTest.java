@@ -1,4 +1,4 @@
-package co.caio.casserole;
+package co.caio.casserole.component;
 
 import static org.junit.jupiter.api.Assertions.*;
 

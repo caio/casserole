@@ -1,5 +1,6 @@
-package co.caio.casserole;
+package co.caio.casserole.component;
 
+import co.caio.casserole.service.MetadataService;
 import co.caio.cerberus.db.RecipeMetadata;
 import co.caio.cerberus.model.SearchQuery;
 import co.caio.cerberus.model.SearchResult;
@@ -66,10 +67,7 @@ class ModelView {
   private static final String URI_RECIPE_SLUG_ID = "/recipe/{slug}/{recipeId}";
 
   RockerModel renderSearch(
-      SearchQuery query,
-      SearchResult result,
-      RecipeMetadataService db,
-      UriComponentsBuilder uriBuilder) {
+      SearchQuery query, SearchResult result, MetadataService db, UriComponentsBuilder uriBuilder) {
 
     var siteInfo =
         new SiteInfo.Builder()
@@ -116,7 +114,7 @@ class ModelView {
   }
 
   private Iterable<RecipeInfo> renderRecipes(
-      List<Long> recipeIds, RecipeMetadataService db, UriComponents uriComponents) {
+      List<Long> recipeIds, MetadataService db, UriComponents uriComponents) {
     return recipeIds
         .stream()
         .map(db::findById)
@@ -135,14 +133,14 @@ class ModelView {
   }
 
   RockerModel renderSingleRecipe(
-      RecipeMetadata recipe, UriComponentsBuilder builder, RecipeMetadataService db) {
+      RecipeMetadata recipe, UriComponentsBuilder builder, MetadataService db) {
     return Recipe.template(
         new SiteInfo.Builder().title(recipe.getName()).searchIsAutoFocus(false).build(),
         buildAdapter(recipe, builder.replacePath(URI_RECIPE_SLUG_ID).build(), db));
   }
 
   List<SimilarInfo> retrieveSimilarRecipes(
-      List<Long> ids, RecipeMetadataService db, UriComponents infoComponents) {
+      List<Long> ids, MetadataService db, UriComponents infoComponents) {
     return ids.stream()
         .map(db::findById)
         .flatMap(Optional::stream)
@@ -151,7 +149,7 @@ class ModelView {
   }
 
   RecipeMetadataRecipeInfoAdapter buildAdapter(
-      RecipeMetadata recipe, UriComponents infoUrlComponents, RecipeMetadataService db) {
+      RecipeMetadata recipe, UriComponents infoUrlComponents, MetadataService db) {
     var similar = retrieveSimilarRecipes(recipe.getSimilarRecipeIds(), db, infoUrlComponents);
     return new RecipeMetadataRecipeInfoAdapter(recipe, infoUrlComponents, similar);
   }

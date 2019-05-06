@@ -1,4 +1,4 @@
-package co.caio.casserole;
+package co.caio.casserole.service;
 
 import co.caio.cerberus.model.SearchQuery;
 import co.caio.cerberus.model.SearchResult;
@@ -9,12 +9,12 @@ import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
 @Service
-public class RecipeSearchService {
+public class SearchService {
 
   private final Searcher searcher;
   private final Cache<SearchQuery, SearchResult> cache;
 
-  public RecipeSearchService(Searcher searcher, Cache<SearchQuery, SearchResult> cache) {
+  public SearchService(Searcher searcher, Cache<SearchQuery, SearchResult> cache) {
     this.searcher = searcher;
     this.cache = cache;
   }

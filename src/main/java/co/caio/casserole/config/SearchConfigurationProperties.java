@@ -1,4 +1,4 @@
-package co.caio.casserole;
+package co.caio.casserole.config;
 
 import java.nio.file.Path;
 import java.time.Duration;
@@ -18,7 +18,28 @@ public class SearchConfigurationProperties {
   @NotNull @Positive int cacheSize;
 
   LuceneConfigurationProperties lucene;
+
   ChronicleConfigurationProperties chronicle;
+
+  public Duration getTimeout() {
+    return timeout;
+  }
+
+  public int getPageSize() {
+    return pageSize;
+  }
+
+  public int getCacheSize() {
+    return cacheSize;
+  }
+
+  public LuceneConfigurationProperties getLucene() {
+    return lucene;
+  }
+
+  public ChronicleConfigurationProperties getChronicle() {
+    return chronicle;
+  }
 
   public void setLucene(LuceneConfigurationProperties lucene) {
     this.lucene = lucene;
@@ -46,13 +67,21 @@ public class SearchConfigurationProperties {
       this.filename = filename;
     }
 
-    Path filename;
+    public Path getFilename() {
+      return filename;
+    }
+
+    @NotNull Path filename;
   }
 
   public static class LuceneConfigurationProperties {
 
     public void setDirectory(Path directory) {
       this.directory = directory;
+    }
+
+    public Path getDirectory() {
+      return directory;
     }
 
     @NotNull Path directory;

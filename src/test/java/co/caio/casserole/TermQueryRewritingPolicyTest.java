@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import co.caio.casserole.TermQueryRewritingPolicy.PerformanceInspectorQuery;
+import co.caio.casserole.ext.PerformanceInspectorQuery;
 import co.caio.cerberus.model.Recipe;
 import co.caio.cerberus.model.SearchQuery;
 import co.caio.cerberus.search.Indexer;
@@ -110,8 +110,8 @@ class TermQueryRewritingPolicyTest {
     var rewritten = policy.rewriteParsedFulltextQuery(bq);
 
     assertTrue(rewritten instanceof PerformanceInspectorQuery);
-    assertEquals(bq, ((PerformanceInspectorQuery) rewritten).delegate);
-    assertEquals(42, ((PerformanceInspectorQuery) rewritten).maxDocFrequency);
+    assertEquals(bq, ((PerformanceInspectorQuery) rewritten).getDelegate());
+    assertEquals(42, ((PerformanceInspectorQuery) rewritten).getMaxDocFrequency());
   }
 
   @Test

@@ -1,5 +1,6 @@
-package co.caio.casserole;
+package co.caio.casserole.config;
 
+import co.caio.casserole.ext.RockerModelHttpMessageWriter;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.springframework.context.annotation.Configuration;

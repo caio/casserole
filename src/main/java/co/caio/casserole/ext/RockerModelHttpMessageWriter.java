@@ -1,4 +1,4 @@
-package co.caio.casserole;
+package co.caio.casserole.ext;
 
 import com.fizzed.rocker.RockerModel;
 import com.fizzed.rocker.runtime.ArrayOfByteArraysOutput;

@@ -2,8 +2,10 @@ package co.caio.casserole;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import co.caio.casserole.IndexFacet.Category;
-import co.caio.casserole.IndexFacet.CategoryRange;
+import co.caio.casserole.component.SearchParameterParser;
+import co.caio.casserole.component.SidebarRenderer;
+import co.caio.casserole.index.Facet.Category;
+import co.caio.casserole.index.Facet.CategoryRange;
 import co.caio.cerberus.model.FacetData;
 import co.caio.cerberus.model.SearchQuery;
 import co.caio.cerberus.model.SearchQuery.RangedSpec;

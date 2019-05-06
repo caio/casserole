@@ -1,8 +1,9 @@
-package co.caio.casserole;
+package co.caio.casserole.component;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import co.caio.casserole.ModelView.OverPaginationError;
+import co.caio.casserole.component.ModelView.OverPaginationError;
+import co.caio.casserole.service.MetadataService;
 import co.caio.cerberus.Util;
 import co.caio.cerberus.db.HashMapRecipeMetadataDatabase;
 import co.caio.cerberus.db.RecipeMetadata;
@@ -23,7 +24,7 @@ class ModelViewTest {
 
   private static final int pageSize = 2; // just to simplify pagination testing
   private static final ModelView modelView;
-  private static final RecipeMetadataService recipeMetadataService;
+  private static final MetadataService METADATA_SERVICE;
   private static final CircuitBreaker breaker = CircuitBreaker.ofDefaults("mvt");
 
   private UriComponentsBuilder uriBuilder;
@@ -32,7 +33,7 @@ class ModelViewTest {
     var db = new HashMapRecipeMetadataDatabase();
     db.saveAll(
         Util.getSampleRecipes().map(RecipeMetadata::fromRecipe).collect(Collectors.toList()));
-    recipeMetadataService = new RecipeMetadataService(db);
+    METADATA_SERVICE = new MetadataService(db);
     modelView = new ModelView(pageSize, Util.expectedIndexSize(), breaker);
   }
 
@@ -79,7 +80,7 @@ class ModelViewTest {
     var result = new SearchResult.Builder().build();
 
     var doc =
-        parseOutput(modelView.renderSearch(unusedQuery, result, recipeMetadataService, uriBuilder));
+        parseOutput(modelView.renderSearch(unusedQuery, result, METADATA_SERVICE, uriBuilder));
     assertTrue(doc.title().startsWith(ModelView.SEARCH_PAGE_TITLE));
     assertTrue(
         doc.selectFirst("section#results div.notification.content")
@@ -93,7 +94,7 @@ class ModelViewTest {
     var result = new SearchResult.Builder().totalHits(180).build();
     assertThrows(
         OverPaginationError.class,
-        () -> modelView.renderSearch(largeOffsetQuery, result, recipeMetadataService, uriBuilder));
+        () -> modelView.renderSearch(largeOffsetQuery, result, METADATA_SERVICE, uriBuilder));
   }
 
   @Test
@@ -102,7 +103,7 @@ class ModelViewTest {
     var result = new SearchResult.Builder().totalHits(1).addRecipe(1).build();
 
     var doc =
-        parseOutput(modelView.renderSearch(unusedQuery, result, recipeMetadataService, uriBuilder));
+        parseOutput(modelView.renderSearch(unusedQuery, result, METADATA_SERVICE, uriBuilder));
 
     assertTrue(doc.title().startsWith(ModelView.SEARCH_PAGE_TITLE));
 
@@ -118,8 +119,7 @@ class ModelViewTest {
 
     var doc =
         parseOutput(
-            modelView.renderSearch(
-                unusedQuery, resultWithNextPage, recipeMetadataService, uriBuilder));
+            modelView.renderSearch(unusedQuery, resultWithNextPage, METADATA_SERVICE, uriBuilder));
 
     assertTrue(doc.title().startsWith(ModelView.SEARCH_PAGE_TITLE));
 
@@ -140,7 +140,7 @@ class ModelViewTest {
     var doc =
         parseOutput(
             modelView.renderSearch(
-                unusedQuery, offsetResultWithNextPage, recipeMetadataService, uriBuilder));
+                unusedQuery, offsetResultWithNextPage, METADATA_SERVICE, uriBuilder));
 
     assertTrue(doc.title().startsWith(ModelView.SEARCH_PAGE_TITLE));
 
@@ -163,7 +163,7 @@ class ModelViewTest {
     var doc =
         parseOutput(
             modelView.renderSearch(
-                unusedQuery, offsetResultWithNextPage, recipeMetadataService, uriBuilder));
+                unusedQuery, offsetResultWithNextPage, METADATA_SERVICE, uriBuilder));
 
     assertTrue(doc.title().startsWith(ModelView.SEARCH_PAGE_TITLE));
 
@@ -186,7 +186,7 @@ class ModelViewTest {
     var doc =
         parseOutput(
             modelView.renderSearch(
-                secondPage, offsetResultWithNextPage, recipeMetadataService, uriBuilder));
+                secondPage, offsetResultWithNextPage, METADATA_SERVICE, uriBuilder));
 
     var sidebarLinks = doc.select("div#sidebar ul.menu-list li a").eachAttr("href");
     assertTrue(sidebarLinks.size() > 0);
@@ -207,7 +207,7 @@ class ModelViewTest {
     var doc =
         parseOutput(
             modelView.renderSearch(
-                secondPage, offsetResultWithNextPage, recipeMetadataService, uriBuilder));
+                secondPage, offsetResultWithNextPage, METADATA_SERVICE, uriBuilder));
 
     assertTrue(doc.title().startsWith(ModelView.SEARCH_PAGE_TITLE));
 
@@ -218,19 +218,19 @@ class ModelViewTest {
   @Test
   void renderSingleRecipe() {
     var model = Util.getSampleRecipes().limit(1).findFirst().orElseThrow();
-    var recipe = recipeMetadataService.findById(model.recipeId());
+    var recipe = METADATA_SERVICE.findById(model.recipeId());
     assertTrue(recipe.isPresent());
     var doc =
         parseOutput(
             modelView.renderSingleRecipe(
-                recipe.get(), UriComponentsBuilder.newInstance(), recipeMetadataService));
+                recipe.get(), UriComponentsBuilder.newInstance(), METADATA_SERVICE));
     assertTrue(doc.title().startsWith(model.name()));
   }
 
   @Test
   void retrieveSimilarRecipes() {
     Util.getSampleRecipes()
-        .map(r -> recipeMetadataService.findById(r.recipeId()))
+        .map(r -> METADATA_SERVICE.findById(r.recipeId()))
         .flatMap(Optional::stream)
         .forEach(
             metadata -> {
@@ -239,11 +239,11 @@ class ModelViewTest {
               var similarRecipes =
                   modelView.retrieveSimilarRecipes(
                       simIds,
-                      recipeMetadataService,
+                      METADATA_SERVICE,
                       UriComponentsBuilder.fromUriString("/recipe/{0}/{1}").build());
 
               for (int i = 0; i < simIds.size(); i++) {
-                var wanted = recipeMetadataService.findById(simIds.get(i)).orElseThrow();
+                var wanted = METADATA_SERVICE.findById(simIds.get(i)).orElseThrow();
                 var sim = similarRecipes.get(i);
                 assertEquals(wanted.getName(), sim.name());
               }
@@ -258,8 +258,7 @@ class ModelViewTest {
     Util.getSampleRecipes().limit(2).forEach(r -> builder.addRecipe(r.recipeId()));
 
     var doc =
-        parseOutput(
-            modelView.renderSearch(query, builder.build(), recipeMetadataService, uriBuilder));
+        parseOutput(modelView.renderSearch(query, builder.build(), METADATA_SERVICE, uriBuilder));
 
     var found = doc.select("section#results article.media .media-right a");
 

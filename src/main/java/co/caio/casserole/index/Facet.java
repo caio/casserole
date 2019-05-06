@@ -1,4 +1,4 @@
-package co.caio.casserole;
+package co.caio.casserole.index;
 
 import co.caio.cerberus.model.Recipe;
 import co.caio.cerberus.model.SearchQuery.RangedSpec;
@@ -9,7 +9,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class IndexFacet {
+public class Facet {
 
   // XXX I'm not super happy with Category and CategoryOption having
   //     the concept of a title since this is only useful for the
@@ -86,7 +86,7 @@ public class IndexFacet {
     return categoryExtractor;
   }
 
-  public IndexFacet() {
+  public Facet() {
     var builder = new CategoryExtractor.Builder();
 
     // NOTE that Category.SORT is not added: there's nothing to index
@@ -106,7 +106,7 @@ public class IndexFacet {
     categoryExtractor = builder.build();
   }
 
-  interface CategoryOption {
+  public interface CategoryOption {
     String getTitle();
 
     String getIndexKey();
@@ -144,7 +144,7 @@ public class IndexFacet {
     }
   }
 
-  enum DietOption implements CategoryOption {
+  public enum DietOption implements CategoryOption {
     LOW_CARB("Low Carb", "lowcarb"),
     KETO("Keto", "keto"),
     PALEO("Paleo", "paleo"),
@@ -175,7 +175,7 @@ public class IndexFacet {
     }
   }
 
-  enum CategoryRange implements CategoryOption, RangedSpec {
+  public enum CategoryRange implements CategoryOption, RangedSpec {
     // num_ingredients
     FROM_ZERO_TO_FIVE("Up to 5", 0, 5),
     FROM_SIX_TO_TEN("From 6 to 10", 6, 10),
@@ -244,7 +244,7 @@ public class IndexFacet {
     }
   }
 
-  Set<String> extractRangeLabels(Category category, double value) {
+  public Set<String> extractRangeLabels(Category category, double value) {
     return category
         .getOptions()
         .stream()
@@ -289,7 +289,7 @@ public class IndexFacet {
     return extractRangeLabels(Category.CARB_CONTENT, r.carbohydrateContent().getAsDouble());
   }
 
-  Set<String> extractDiets(Recipe r) {
+  public Set<String> extractDiets(Recipe r) {
     return r.diets()
         .entrySet()
         .stream()

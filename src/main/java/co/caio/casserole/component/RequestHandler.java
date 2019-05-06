@@ -1,7 +1,9 @@
-package co.caio.casserole;
+package co.caio.casserole.component;
 
 import static org.springframework.web.reactive.function.server.RouterFunctions.route;
 
+import co.caio.casserole.service.MetadataService;
+import co.caio.casserole.service.SearchService;
 import co.caio.cerberus.db.RecipeMetadata;
 import com.fizzed.rocker.RockerModel;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
@@ -22,24 +24,24 @@ import reactor.core.scheduler.Schedulers;
 public class RequestHandler {
   private final SearchParameterParser parser;
   private final ModelView modelView;
-  private final RecipeMetadataService recipeMetadataService;
-  private final RecipeSearchService searchService;
+  private final MetadataService metadataService;
+  private final SearchService searchService;
   private final CircuitBreaker breaker;
   private final Duration searchTimeout;
 
   public RequestHandler(
-      RecipeSearchService searchService,
+      SearchService searchService,
       Duration searchTimeout,
       CircuitBreaker breaker,
       ModelView modelView,
-      RecipeMetadataService recipeMetadataService,
+      MetadataService metadataService,
       SearchParameterParser parameterParser) {
     this.searchService = searchService;
     this.breaker = breaker;
     this.searchTimeout = searchTimeout;
     this.parser = parameterParser;
     this.modelView = modelView;
-    this.recipeMetadataService = recipeMetadataService;
+    this.metadataService = metadataService;
   }
 
   @Bean
@@ -76,7 +78,7 @@ public class RequestHandler {
                         modelView.renderSearch(
                             query,
                             result,
-                            recipeMetadataService,
+                            metadataService,
                             UriComponentsBuilder.fromUri(request.uri()))),
             RockerModel.class);
   }
@@ -85,7 +87,7 @@ public class RequestHandler {
     var slug = request.pathVariable("slug");
     var recipeId = Long.parseLong(request.pathVariable("recipeId"));
 
-    var recipe = recipeMetadataService.findById(recipeId).orElseThrow(RecipeNotFoundError::new);
+    var recipe = metadataService.findById(recipeId).orElseThrow(RecipeNotFoundError::new);
 
     if (!slug.equals(recipe.getSlug())) {
       throw new RecipeNotFoundError();
@@ -101,7 +103,7 @@ public class RequestHandler {
         .body(
             BodyInserters.fromObject(
                 modelView.renderSingleRecipe(
-                    recipe, UriComponentsBuilder.fromUri(request.uri()), recipeMetadataService)));
+                    recipe, UriComponentsBuilder.fromUri(request.uri()), metadataService)));
   }
 
   static class RecipeNotFoundError extends RuntimeException {

@@ -1,5 +1,6 @@
 package co.caio.casserole;
 
+import co.caio.casserole.config.SearchConfigurationProperties;
 import co.caio.cerberus.db.ChronicleRecipeMetadataDatabase;
 import co.caio.cerberus.db.RecipeMetadataDatabase;
 import co.caio.cerberus.model.SearchQuery;
@@ -32,25 +33,25 @@ public class BootApplication {
 
   @Bean
   RecipeMetadataDatabase getMetadataDb(SearchConfigurationProperties conf) {
-    return ChronicleRecipeMetadataDatabase.open(conf.chronicle.filename);
+    return ChronicleRecipeMetadataDatabase.open(conf.getChronicle().getFilename());
   }
 
   @Bean
   Searcher getSearcher(SearchConfigurationProperties conf) {
     return new Searcher.Builder()
-        .dataDirectory(conf.lucene.directory)
+        .dataDirectory(conf.getLucene().getDirectory())
         .searchPolicy(new TermQueryRewritingPolicy(200_000))
         .build();
   }
 
   @Bean
   Duration searchTimeout(SearchConfigurationProperties conf) {
-    return conf.timeout;
+    return conf.getTimeout();
   }
 
   @Bean("searchPageSize")
   int pageSize(SearchConfigurationProperties conf) {
-    return conf.pageSize;
+    return conf.getPageSize();
   }
 
   @Bean
@@ -72,7 +73,10 @@ public class BootApplication {
   Cache<SearchQuery, SearchResult> searchResultCache(
       SearchConfigurationProperties conf, MeterRegistry registry) {
     Cache<SearchQuery, SearchResult> cache =
-        Caffeine.newBuilder().maximumSize(conf.cacheSize).initialCapacity(conf.cacheSize).build();
+        Caffeine.newBuilder()
+            .maximumSize(conf.getCacheSize())
+            .initialCapacity(conf.getCacheSize())
+            .build();
 
     return CaffeineCacheMetrics.monitor(registry, cache, "search");
   }
