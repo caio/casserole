@@ -24,7 +24,7 @@
         <cerberus.version>0.6.1</cerberus.version>
         <tablier.version>0.5.1</tablier.version>
 
-        <spring-boot.version>2.1.4.RELEASE</spring-boot.version>
+        <spring-boot.version>2.1.5.RELEASE</spring-boot.version>
         <resilience4j.version>0.14.1</resilience4j.version>
         <jsoup.version>1.11.3</jsoup.version>
         <picocli.version>3.9.5</picocli.version>
