@@ -8,6 +8,8 @@ import co.caio.cerberus.Util;
 import co.caio.cerberus.db.HashMapRecipeMetadataDatabase;
 import co.caio.cerberus.db.RecipeMetadata;
 import co.caio.cerberus.model.SearchQuery;
+import co.caio.cerberus.model.SearchQuery.Builder;
+import co.caio.cerberus.model.SearchQuery.RangedSpec;
 import co.caio.cerberus.model.SearchResult;
 import com.fizzed.rocker.RockerModel;
 import com.fizzed.rocker.runtime.StringBuilderOutput;
@@ -81,7 +83,8 @@ class ModelViewTest {
 
     var doc =
         parseOutput(modelView.renderSearch(unusedQuery, result, METADATA_SERVICE, uriBuilder));
-    assertTrue(doc.title().startsWith(ModelView.SEARCH_PAGE_TITLE));
+    assertTrue(
+        doc.title().startsWith(modelView.getSearchPageTitle(unusedQuery, result.totalHits())));
     assertTrue(
         doc.selectFirst("section#results div.notification.content")
             .text()
@@ -105,7 +108,8 @@ class ModelViewTest {
     var doc =
         parseOutput(modelView.renderSearch(unusedQuery, result, METADATA_SERVICE, uriBuilder));
 
-    assertTrue(doc.title().startsWith(ModelView.SEARCH_PAGE_TITLE));
+    assertTrue(
+        doc.title().startsWith(modelView.getSearchPageTitle(unusedQuery, result.totalHits())));
 
     assertTrue(doc.selectFirst("nav.pagination a.pagination-previous").attr("href").isEmpty());
     assertTrue(doc.selectFirst("nav.pagination a.pagination-next").attr("href").isEmpty());
@@ -121,7 +125,9 @@ class ModelViewTest {
         parseOutput(
             modelView.renderSearch(unusedQuery, resultWithNextPage, METADATA_SERVICE, uriBuilder));
 
-    assertTrue(doc.title().startsWith(ModelView.SEARCH_PAGE_TITLE));
+    assertTrue(
+        doc.title()
+            .startsWith(modelView.getSearchPageTitle(unusedQuery, resultWithNextPage.totalHits())));
 
     assertTrue(doc.selectFirst("nav.pagination a.pagination-previous").attr("href").isEmpty());
     assertTrue(doc.selectFirst("nav.pagination a.pagination-next").attr("href").contains("page=2"));
@@ -142,7 +148,10 @@ class ModelViewTest {
             modelView.renderSearch(
                 unusedQuery, offsetResultWithNextPage, METADATA_SERVICE, uriBuilder));
 
-    assertTrue(doc.title().startsWith(ModelView.SEARCH_PAGE_TITLE));
+    assertTrue(
+        doc.title()
+            .startsWith(
+                modelView.getSearchPageTitle(unusedQuery, offsetResultWithNextPage.totalHits())));
 
     assertTrue(
         doc.selectFirst("nav.pagination a.pagination-previous").attr("href").contains("page=1"));
@@ -165,7 +174,10 @@ class ModelViewTest {
             modelView.renderSearch(
                 unusedQuery, offsetResultWithNextPage, METADATA_SERVICE, uriBuilder));
 
-    assertTrue(doc.title().startsWith(ModelView.SEARCH_PAGE_TITLE));
+    assertTrue(
+        doc.title()
+            .startsWith(
+                modelView.getSearchPageTitle(unusedQuery, offsetResultWithNextPage.totalHits())));
 
     assertTrue(
         doc.selectFirst("nav.pagination a.pagination-previous").attr("href").contains("page=1"));
@@ -209,7 +221,10 @@ class ModelViewTest {
             modelView.renderSearch(
                 secondPage, offsetResultWithNextPage, METADATA_SERVICE, uriBuilder));
 
-    assertTrue(doc.title().startsWith(ModelView.SEARCH_PAGE_TITLE));
+    assertTrue(
+        doc.title()
+            .startsWith(
+                modelView.getSearchPageTitle(secondPage, offsetResultWithNextPage.totalHits())));
 
     var subtitle = doc.selectFirst("section#results div.notification.content").text();
     assertTrue(subtitle.contains("from 3 to 4."));
@@ -270,5 +285,55 @@ class ModelViewTest {
           assertFalse(href.isEmpty());
           assertFalse(href.contains("page="));
         });
+  }
+
+  @Test
+  void getSearchPageTitle() {
+    var range = RangedSpec.of(1, 10);
+
+    checkTitle("Browsing 1 recipe. Page 1", fulltext(""), 1);
+    checkTitle("Browsing 2 recipes. Page 1", fulltext(""), 2);
+    checkTitle("Browsing 5 recipes. Page 3", fulltext("").offset(pageSize * 2), 5);
+    checkTitle(
+        "Browsing 12 recipes, with one filter applied. Page 1", fulltext("").calories(range), 12);
+    checkTitle(
+        "Browsing 42 recipes, with 2 filters applied. Page 1",
+        fulltext("").calories(range).cookTime(range),
+        42);
+
+    checkTitle("1 Result for: bacon. Page 1", fulltext("bacon"), 1);
+    checkTitle("34 Results for: bacon. Page 1", fulltext("bacon"), 34);
+    checkTitle("5 Results for: bacon. Page 3", fulltext("bacon").offset(pageSize * 2), 5);
+    checkTitle(
+        "13 Results for: bacon, with one filter applied. Page 1",
+        fulltext("bacon").calories(range),
+        13);
+    checkTitle(
+        "0 Results for: bacon, with 2 filters applied. Page 1",
+        fulltext("bacon").calories(range).cookTime(range),
+        0);
+
+    checkTitle("1 Result for: \"hard cheese\". Page 1", fulltext("\"hard cheese\""), 1);
+    checkTitle("27 Results for: \"hard cheese\". Page 1", fulltext("\"hard cheese\""), 27);
+    checkTitle(
+        "5 Results for: \"hard cheese\". Page 3",
+        fulltext("\"hard cheese\"").offset(pageSize * 2),
+        5);
+    checkTitle(
+        "123 Results for: \"hard cheese\", with one filter applied. Page 1",
+        fulltext("\"hard cheese\"").calories(range),
+        123);
+    checkTitle(
+        "1 Result for: \"hard cheese\", with 3 filters applied. Page 1",
+        fulltext("\"hard cheese\"").calories(range).cookTime(range).addMatchDiet("keto"),
+        1);
+  }
+
+  private void checkTitle(String wanted, SearchQuery.Builder builder, long totalHits) {
+    assertEquals(wanted, modelView.getSearchPageTitle(builder.build(), totalHits));
+  }
+
+  private SearchQuery.Builder fulltext(String query) {
+    return new Builder().fulltext(query);
   }
 }

@@ -29,7 +29,6 @@ import org.springframework.web.util.UriComponentsBuilder;
 class ModelView {
 
   static final String INDEX_PAGE_TITLE = "The Private, Ad-Free Recipe Search Experience";
-  static final String SEARCH_PAGE_TITLE = "Search Results";
   static final String ERROR_PAGE_TITLE = "An Error Has Occurred";
 
   private static final SiteInfo DEFAULT_UNSTABLE_INDEX_SITE =
@@ -66,15 +65,37 @@ class ModelView {
 
   private static final String URI_RECIPE_SLUG_ID = "/recipe/{slug}/{recipeId}";
 
+  String getSearchPageTitle(SearchQuery query, long totalHits) {
+    var sb = new StringBuilder();
+
+    var fulltext = query.fulltext().orElse("");
+    if (fulltext.isBlank()) {
+      sb.append("Browsing ");
+      sb.append(totalHits);
+      sb.append(totalHits == 1 ? " recipe" : " recipes");
+    } else {
+      sb.append(totalHits);
+      sb.append(totalHits == 1 ? " Result for: " : " Results for: ");
+      sb.append(fulltext);
+    }
+
+    var numFilters = query.numSelectedFilters();
+    if (numFilters == 1) {
+      sb.append(", with one filter applied");
+    } else if (numFilters > 1) {
+      sb.append(", with ");
+      sb.append(numFilters);
+      sb.append(" filters applied");
+    }
+
+    sb.append(". Page ");
+    sb.append((query.offset() / pageSize) + 1);
+
+    return sb.toString();
+  }
+
   RockerModel renderSearch(
       SearchQuery query, SearchResult result, MetadataService db, UriComponentsBuilder uriBuilder) {
-
-    var siteInfo =
-        new SiteInfo.Builder()
-            .title(SEARCH_PAGE_TITLE)
-            .searchIsAutoFocus(false)
-            .searchValue(query.fulltext().orElse(""))
-            .build();
 
     if (query.offset() >= result.totalHits() && result.totalHits() > 0) {
       throw new OverPaginationError("No more results to show for this search");
@@ -109,6 +130,13 @@ class ModelView {
       searchBuilder.previousPageHref(
           uriBuilder.replaceQueryParam("page", currentPage - 1).build().toUriString());
     }
+
+    var siteInfo =
+        new SiteInfo.Builder()
+            .title(getSearchPageTitle(query, result.totalHits()))
+            .searchIsAutoFocus(false)
+            .searchValue(query.fulltext().orElse(""))
+            .build();
 
     return Search.template(siteInfo, searchBuilder.build());
   }
