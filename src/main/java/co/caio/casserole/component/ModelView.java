@@ -55,10 +55,13 @@ class ModelView {
   }
 
   RockerModel renderIndex() {
-    if (breaker.isCallPermitted()) {
-      return Index.template(DEFAULT_INDEX_SITE);
-    } else {
-      return Index.template(DEFAULT_UNSTABLE_INDEX_SITE);
+    switch (breaker.getState()) {
+      case OPEN:
+      case FORCED_OPEN:
+        return Index.template(DEFAULT_UNSTABLE_INDEX_SITE);
+        // NOTE Considering HALF_OPEN as Ok
+      default:
+        return Index.template(DEFAULT_INDEX_SITE);
     }
   }
 

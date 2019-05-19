@@ -4,7 +4,7 @@ import co.caio.casserole.TermQueryRewritingPolicy.PolicyException;
 import co.caio.casserole.component.ModelView.OverPaginationError;
 import co.caio.casserole.component.RequestHandler.RecipeNotFoundError;
 import co.caio.casserole.component.SearchParameterParser.SearchParameterException;
-import io.github.resilience4j.circuitbreaker.CircuitBreakerOpenException;
+import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeoutException;
@@ -121,7 +121,7 @@ public class ExceptionHandler extends AbstractErrorWebExceptionHandler {
               HttpStatus.REQUEST_TIMEOUT,
               "Timeout Error",
               "We're likely overloaded, please try again in a few minutes"),
-          CircuitBreakerOpenException.class,
+          CallNotPermittedException.class,
           new ErrorSpec(
               HttpStatus.SERVICE_UNAVAILABLE,
               "Service Unavailable",

@@ -9,11 +9,11 @@ import co.caio.cerberus.search.Searcher;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
-import io.github.resilience4j.micrometer.CircuitBreakerMetrics;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
+import io.github.resilience4j.micrometer.tagged.TaggedCircuitBreakerMetrics;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.binder.cache.CaffeineCacheMetrics;
 import java.time.Duration;
-import java.util.List;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -60,13 +60,13 @@ public class BootApplication {
   }
 
   @Bean("searchCircuitBreaker")
-  CircuitBreaker getSearchCircuitBreaker() {
-    return CircuitBreaker.ofDefaults("searchCircuitBreaker");
-  }
+  CircuitBreaker getSearchCircuitBreaker(MeterRegistry registry) {
+    var cbRegistry = CircuitBreakerRegistry.ofDefaults();
+    var breaker = cbRegistry.circuitBreaker("searchCircuitBreaker");
 
-  @Bean
-  CircuitBreakerMetrics registerMetrics(CircuitBreaker breaker) {
-    return CircuitBreakerMetrics.ofIterable(List.of(breaker));
+    TaggedCircuitBreakerMetrics.ofCircuitBreakerRegistry(cbRegistry).bindTo(registry);
+
+    return breaker;
   }
 
   @Bean
