@@ -1,8 +1,8 @@
 package co.caio.casserole;
 
 import co.caio.casserole.config.SearchConfigurationProperties;
-import co.caio.cerberus.db.ChronicleRecipeMetadataDatabase;
 import co.caio.cerberus.db.RecipeMetadataDatabase;
+import co.caio.cerberus.db.SimpleRecipeMetadataDatabase;
 import co.caio.cerberus.model.SearchQuery;
 import co.caio.cerberus.model.SearchResult;
 import co.caio.cerberus.search.Searcher;
@@ -33,7 +33,7 @@ public class BootApplication {
 
   @Bean
   RecipeMetadataDatabase getMetadataDb(SearchConfigurationProperties conf) {
-    return ChronicleRecipeMetadataDatabase.open(conf.getChronicle().getFilename());
+    return new SimpleRecipeMetadataDatabase(conf.getSdb().getDirectory());
   }
 
   @Bean
