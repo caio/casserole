@@ -98,9 +98,6 @@ class ModelView {
       throw new OverPaginationError("No more results to show for this search");
     }
 
-    boolean isLastPage = query.offset() + pageSize >= result.totalHits();
-    int currentPage = (query.offset() / pageSize) + 1;
-
     var searchBuilder =
         new SearchResultsInfo.Builder()
             .numRecipes(numRecipes)
@@ -110,11 +107,8 @@ class ModelView {
 
     searchBuilder.recipes(renderRecipes(result.recipeIds(), db));
 
-    // Sidebar links always lead to the first page
-    uriBuilder.replaceQueryParam("page");
-    searchBuilder.sidebar(sidebarRenderer.render(query, result, uriBuilder));
-
-    searchBuilder.numAppliedFilters((int) query.numSelectedFilters());
+    boolean isLastPage = query.offset() + pageSize >= result.totalHits();
+    int currentPage = (query.offset() / pageSize) + 1;
 
     // NOTE that the following modifies the uriBuilder in place
     if (!isLastPage) {
@@ -127,9 +121,37 @@ class ModelView {
           uriBuilder.replaceQueryParam("page", currentPage - 1).build().toUriString());
     }
 
+    searchBuilder.sidebar(
+        sidebarRenderer.render(
+            query,
+            result,
+            // Sidebar links always lead to the first page
+            uriBuilder.replaceQueryParam("page")));
+
+    int numFilters = (int) query.numSelectedFilters();
+    if (numFilters > 0) {
+      searchBuilder.numAppliedFilters(numFilters);
+      searchBuilder.clearFiltersUrl(
+          uriBuilder
+              .cloneBuilder()
+              .replaceQuery(null)
+              .replaceQueryParam("q", query.fulltext().orElse(""))
+              .build()
+              .toUriString());
+    }
+
+    var extraParams =
+        uriBuilder
+            .replaceQueryParam("q")
+            .replaceQueryParam("page")
+            .build()
+            .getQueryParams()
+            .toSingleValueMap();
+
     var siteInfo =
         new SiteInfo.Builder()
             .title(getSearchPageTitle(query, result.totalHits()))
+            .extraSearchParams(extraParams)
             .searchIsAutoFocus(false)
             .searchValue(query.fulltext().orElse(""))
             .build();
