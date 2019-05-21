@@ -297,6 +297,7 @@ class BootApplicationTest {
 
   @Test
   void smallOrEmptyQueryWorks() {
+    given(searcher.search(any())).willReturn(new SearchResult.Builder().build());
     var validUris = List.of("/search", "/search?q=", "/search?q=a", "/search?q=ab");
 
     validUris.forEach(
