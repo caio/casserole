@@ -5,7 +5,10 @@ import static org.springframework.web.reactive.function.server.RouterFunctions.r
 import co.caio.casserole.service.MetadataService;
 import co.caio.casserole.service.SearchService;
 import co.caio.cerberus.db.RecipeMetadata;
+import co.caio.cerberus.model.SearchQuery;
+import co.caio.cerberus.model.SearchResult;
 import com.fizzed.rocker.RockerModel;
+import com.github.benmanes.caffeine.cache.Cache;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.reactor.circuitbreaker.operator.CircuitBreakerOperator;
 import java.time.Duration;
@@ -28,6 +31,7 @@ public class RequestHandler {
   private final SearchService searchService;
   private final CircuitBreaker breaker;
   private final Duration searchTimeout;
+  private final Cache<SearchQuery, SearchResult> cache;
 
   public RequestHandler(
       SearchService searchService,
@@ -35,13 +39,15 @@ public class RequestHandler {
       CircuitBreaker breaker,
       ModelView modelView,
       MetadataService metadataService,
-      SearchParameterParser parameterParser) {
+      SearchParameterParser parameterParser,
+      Cache<SearchQuery, SearchResult> cache) {
     this.searchService = searchService;
     this.breaker = breaker;
     this.searchTimeout = searchTimeout;
     this.parser = parameterParser;
     this.modelView = modelView;
     this.metadataService = metadataService;
+    this.cache = cache;
   }
 
   @Bean
@@ -62,16 +68,27 @@ public class RequestHandler {
         .body(BodyInserters.fromObject(modelView.renderIndex()));
   }
 
+  Mono<SearchResult> fetchResult(SearchQuery query) {
+    var cached = cache.getIfPresent(query);
+
+    if (cached != null) {
+      return Mono.just(cached);
+    }
+
+    return searchService
+        .search(query)
+        .timeout(searchTimeout)
+        .doOnNext(result -> cache.put(query, result))
+        .transform(CircuitBreakerOperator.of(breaker));
+  }
+
   Mono<ServerResponse> search(ServerRequest request) {
     var query = parser.buildQuery(request.queryParams().toSingleValueMap());
 
     return ServerResponse.ok()
         .contentType(MediaType.TEXT_HTML)
         .body(
-            searchService
-                .search(query)
-                .timeout(searchTimeout)
-                .transform(CircuitBreakerOperator.of(breaker))
+            fetchResult(query)
                 .publishOn(Schedulers.elastic())
                 .map(
                     result ->

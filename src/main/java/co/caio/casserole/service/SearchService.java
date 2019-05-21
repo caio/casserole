@@ -12,28 +12,13 @@ import reactor.core.scheduler.Schedulers;
 public class SearchService {
 
   private final Searcher searcher;
-  private final Cache<SearchQuery, SearchResult> cache;
 
   public SearchService(Searcher searcher, Cache<SearchQuery, SearchResult> cache) {
     this.searcher = searcher;
-    this.cache = cache;
   }
 
-  // This is a bit awkward in order to avoid occupying a parallel
-  // worker (subscribeOn) when a search is already cached
   public Mono<SearchResult> search(SearchQuery query) {
 
-    SearchResult cachedResult = cache.getIfPresent(query);
-    if (cachedResult != null) {
-      return Mono.just(cachedResult);
-    }
-
-    return Mono.fromCallable(
-            () -> {
-              var result = searcher.search(query);
-              cache.put(query, result);
-              return result;
-            })
-        .subscribeOn(Schedulers.parallel());
+    return Mono.fromCallable(() -> searcher.search(query)).subscribeOn(Schedulers.parallel());
   }
 }
