@@ -187,7 +187,7 @@ class ModelView {
     return ids.stream()
         .map(db::findById)
         .flatMap(Optional::stream)
-        .map(r -> new RecipeMetadataSimilarInfoAdapter(r))
+        .map(RecipeMetadataSimilarInfoAdapter::new)
         .collect(Collectors.toList());
   }
 
