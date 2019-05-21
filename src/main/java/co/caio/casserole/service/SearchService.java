@@ -19,8 +19,21 @@ public class SearchService {
     this.cache = cache;
   }
 
+  // This is a bit awkward in order to avoid occupying a parallel
+  // worker (subscribeOn) when a search is already cached
   public Mono<SearchResult> search(SearchQuery query) {
-    return Mono.fromCallable(() -> cache.get(query, searcher::search))
+
+    SearchResult cachedResult = cache.getIfPresent(query);
+    if (cachedResult != null) {
+      return Mono.just(cachedResult);
+    }
+
+    return Mono.fromCallable(
+            () -> {
+              var result = searcher.search(query);
+              cache.put(query, result);
+              return result;
+            })
         .subscribeOn(Schedulers.parallel());
   }
 }
