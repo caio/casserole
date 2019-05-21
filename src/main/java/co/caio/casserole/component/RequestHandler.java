@@ -100,10 +100,7 @@ public class RequestHandler {
     var recipe = fromRequest(request);
     return ServerResponse.ok()
         .contentType(MediaType.TEXT_HTML)
-        .body(
-            BodyInserters.fromObject(
-                modelView.renderSingleRecipe(
-                    recipe, UriComponentsBuilder.fromUri(request.uri()), metadataService)));
+        .body(BodyInserters.fromObject(modelView.renderSingleRecipe(recipe, metadataService)));
   }
 
   static class RecipeNotFoundError extends RuntimeException {
