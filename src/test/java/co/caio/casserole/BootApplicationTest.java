@@ -7,7 +7,9 @@ import static org.mockito.BDDMockito.given;
 import co.caio.casserole.TermQueryRewritingPolicy.PolicyException;
 import co.caio.casserole.component.SearchParameterParser.SearchParameterException;
 import co.caio.casserole.service.MetadataService;
+import co.caio.cerberus.db.HashMapRecipeMetadataDatabase;
 import co.caio.cerberus.db.RecipeMetadata;
+import co.caio.cerberus.db.RecipeMetadataDatabase;
 import co.caio.cerberus.model.Recipe;
 import co.caio.cerberus.model.SearchResult;
 import co.caio.cerberus.search.Searcher;
@@ -51,6 +53,11 @@ class BootApplicationTest {
     @Bean
     Duration searchTimeout() {
       return Duration.ofMillis(100);
+    }
+
+    @Bean
+    RecipeMetadataDatabase getMetadataDb() {
+      return new HashMapRecipeMetadataDatabase();
     }
   }
 
