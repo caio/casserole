@@ -7,7 +7,7 @@
     <parent>
         <groupId>co.caio</groupId>
         <artifactId>gula-bom</artifactId>
-        <version>0.0.5</version>
+        <version>0.1.0</version>
     </parent>
 
     <artifactId>casserole</artifactId>
@@ -21,8 +21,8 @@
     <properties>
         <start-class>co.caio.casserole.BootApplication</start-class>
 
-        <cerberus.version>0.6.3</cerberus.version>
-        <tablier.version>0.5.3</tablier.version>
+        <cerberus.version>0.7.0</cerberus.version>
+        <tablier.version>0.5.4</tablier.version>
 
         <spring-boot.version>2.1.5.RELEASE</spring-boot.version>
         <resilience4j.version>0.14.1</resilience4j.version>

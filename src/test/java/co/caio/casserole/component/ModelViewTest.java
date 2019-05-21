@@ -235,10 +235,7 @@ class ModelViewTest {
     var model = Util.getSampleRecipes().limit(1).findFirst().orElseThrow();
     var recipe = METADATA_SERVICE.findById(model.recipeId());
     assertTrue(recipe.isPresent());
-    var doc =
-        parseOutput(
-            modelView.renderSingleRecipe(
-                recipe.get(), UriComponentsBuilder.newInstance(), METADATA_SERVICE));
+    var doc = parseOutput(modelView.renderSingleRecipe(recipe.get(), METADATA_SERVICE));
     assertTrue(doc.title().startsWith(model.name()));
   }
 
@@ -251,11 +248,7 @@ class ModelViewTest {
             metadata -> {
               var simIds = metadata.getSimilarRecipeIds();
 
-              var similarRecipes =
-                  modelView.retrieveSimilarRecipes(
-                      simIds,
-                      METADATA_SERVICE,
-                      UriComponentsBuilder.fromUriString("/recipe/{0}/{1}").build());
+              var similarRecipes = modelView.retrieveSimilarRecipes(simIds, METADATA_SERVICE);
 
               for (int i = 0; i < simIds.size(); i++) {
                 var wanted = METADATA_SERVICE.findById(simIds.get(i)).orElseThrow();

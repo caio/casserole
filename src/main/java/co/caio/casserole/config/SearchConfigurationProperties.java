@@ -19,7 +19,7 @@ public class SearchConfigurationProperties {
 
   LuceneConfigurationProperties lucene;
 
-  ChronicleConfigurationProperties chronicle;
+  SdbConfigurationProperties sdb;
 
   public Duration getTimeout() {
     return timeout;
@@ -33,12 +33,16 @@ public class SearchConfigurationProperties {
     return cacheSize;
   }
 
-  public LuceneConfigurationProperties getLucene() {
-    return lucene;
+  public SdbConfigurationProperties getSdb() {
+    return sdb;
   }
 
-  public ChronicleConfigurationProperties getChronicle() {
-    return chronicle;
+  public void setSdb(SdbConfigurationProperties sdb) {
+    this.sdb = sdb;
+  }
+
+  public LuceneConfigurationProperties getLucene() {
+    return lucene;
   }
 
   public void setLucene(LuceneConfigurationProperties lucene) {
@@ -49,10 +53,6 @@ public class SearchConfigurationProperties {
     this.cacheSize = cacheSize;
   }
 
-  public void setChronicle(ChronicleConfigurationProperties chronicle) {
-    this.chronicle = chronicle;
-  }
-
   public void setTimeout(Duration duration) {
     timeout = duration;
   }
@@ -61,20 +61,20 @@ public class SearchConfigurationProperties {
     pageSize = size;
   }
 
-  public static class ChronicleConfigurationProperties {
+  public static class LuceneConfigurationProperties {
 
-    public void setFilename(Path filename) {
-      this.filename = filename;
+    public void setDirectory(Path directory) {
+      this.directory = directory;
     }
 
-    public Path getFilename() {
-      return filename;
+    public Path getDirectory() {
+      return directory;
     }
 
-    @NotNull Path filename;
+    @NotNull Path directory;
   }
 
-  public static class LuceneConfigurationProperties {
+  public static class SdbConfigurationProperties {
 
     public void setDirectory(Path directory) {
       this.directory = directory;

@@ -22,7 +22,6 @@ import java.util.OptionalInt;
 import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
-import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
 
 @Component
@@ -63,8 +62,6 @@ class ModelView {
     }
   }
 
-  private static final String URI_RECIPE_SLUG_ID = "/recipe/{slug}/{recipeId}";
-
   String getSearchPageTitle(SearchQuery query, long totalHits) {
     var sb = new StringBuilder();
 
@@ -101,9 +98,6 @@ class ModelView {
       throw new OverPaginationError("No more results to show for this search");
     }
 
-    boolean isLastPage = query.offset() + pageSize >= result.totalHits();
-    int currentPage = (query.offset() / pageSize) + 1;
-
     var searchBuilder =
         new SearchResultsInfo.Builder()
             .numRecipes(numRecipes)
@@ -111,14 +105,10 @@ class ModelView {
             .paginationEnd(result.recipeIds().size() + query.offset())
             .numMatching(result.totalHits());
 
-    var recipeInfoUriComponents = uriBuilder.cloneBuilder().replacePath(URI_RECIPE_SLUG_ID).build();
-    searchBuilder.recipes(renderRecipes(result.recipeIds(), db, recipeInfoUriComponents));
+    searchBuilder.recipes(renderRecipes(result.recipeIds(), db));
 
-    // Sidebar links always lead to the first page
-    uriBuilder.replaceQueryParam("page");
-    searchBuilder.sidebar(sidebarRenderer.render(query, result, uriBuilder));
-
-    searchBuilder.numAppliedFilters((int) query.numSelectedFilters());
+    boolean isLastPage = query.offset() + pageSize >= result.totalHits();
+    int currentPage = (query.offset() / pageSize) + 1;
 
     // NOTE that the following modifies the uriBuilder in place
     if (!isLastPage) {
@@ -131,9 +121,37 @@ class ModelView {
           uriBuilder.replaceQueryParam("page", currentPage - 1).build().toUriString());
     }
 
+    searchBuilder.sidebar(
+        sidebarRenderer.render(
+            query,
+            result,
+            // Sidebar links always lead to the first page
+            uriBuilder.replaceQueryParam("page")));
+
+    int numFilters = (int) query.numSelectedFilters();
+    if (numFilters > 0) {
+      searchBuilder.numAppliedFilters(numFilters);
+      searchBuilder.clearFiltersUrl(
+          uriBuilder
+              .cloneBuilder()
+              .replaceQuery(null)
+              .replaceQueryParam("q", query.fulltext().orElse(""))
+              .build()
+              .toUriString());
+    }
+
+    var extraParams =
+        uriBuilder
+            .replaceQueryParam("q")
+            .replaceQueryParam("page")
+            .build()
+            .getQueryParams()
+            .toSingleValueMap();
+
     var siteInfo =
         new SiteInfo.Builder()
             .title(getSearchPageTitle(query, result.totalHits()))
+            .extraSearchParams(extraParams)
             .searchIsAutoFocus(false)
             .searchValue(query.fulltext().orElse(""))
             .build();
@@ -141,13 +159,12 @@ class ModelView {
     return Search.template(siteInfo, searchBuilder.build());
   }
 
-  private Iterable<RecipeInfo> renderRecipes(
-      List<Long> recipeIds, MetadataService db, UriComponents uriComponents) {
+  private Iterable<RecipeInfo> renderRecipes(List<Long> recipeIds, MetadataService db) {
     return recipeIds
         .stream()
         .map(db::findById)
         .flatMap(Optional::stream)
-        .map(r -> buildAdapter(r, uriComponents, db))
+        .map(r -> buildAdapter(r, db))
         .collect(Collectors.toList());
   }
 
@@ -160,36 +177,31 @@ class ModelView {
             .build());
   }
 
-  RockerModel renderSingleRecipe(
-      RecipeMetadata recipe, UriComponentsBuilder builder, MetadataService db) {
+  RockerModel renderSingleRecipe(RecipeMetadata recipe, MetadataService db) {
     return Recipe.template(
         new SiteInfo.Builder().title(recipe.getName()).searchIsAutoFocus(false).build(),
-        buildAdapter(recipe, builder.replacePath(URI_RECIPE_SLUG_ID).build(), db));
+        buildAdapter(recipe, db));
   }
 
-  List<SimilarInfo> retrieveSimilarRecipes(
-      List<Long> ids, MetadataService db, UriComponents infoComponents) {
+  List<SimilarInfo> retrieveSimilarRecipes(List<Long> ids, MetadataService db) {
     return ids.stream()
         .map(db::findById)
         .flatMap(Optional::stream)
-        .map(r -> new RecipeMetadataSimilarInfoAdapter(r, infoComponents))
+        .map(r -> new RecipeMetadataSimilarInfoAdapter(r))
         .collect(Collectors.toList());
   }
 
-  RecipeMetadataRecipeInfoAdapter buildAdapter(
-      RecipeMetadata recipe, UriComponents infoUrlComponents, MetadataService db) {
-    var similar = retrieveSimilarRecipes(recipe.getSimilarRecipeIds(), db, infoUrlComponents);
-    return new RecipeMetadataRecipeInfoAdapter(recipe, infoUrlComponents, similar);
+  RecipeMetadataRecipeInfoAdapter buildAdapter(RecipeMetadata recipe, MetadataService db) {
+    var similar = retrieveSimilarRecipes(recipe.getSimilarRecipeIds(), db);
+    return new RecipeMetadataRecipeInfoAdapter(recipe, similar);
   }
 
   static class RecipeMetadataSimilarInfoAdapter extends SimilarInfo {
 
     private final RecipeMetadata delegate;
-    private final UriComponents infoUriComponents;
 
-    RecipeMetadataSimilarInfoAdapter(RecipeMetadata delegate, UriComponents infoUriComponents) {
+    RecipeMetadataSimilarInfoAdapter(RecipeMetadata delegate) {
       this.delegate = delegate;
-      this.infoUriComponents = infoUriComponents;
     }
 
     @Override
@@ -204,22 +216,24 @@ class ModelView {
 
     @Override
     public String infoUrl() {
-      return infoUriComponents.expand(delegate.getSlug(), delegate.getRecipeId()).toUriString();
+      return buildInfoUrl(delegate);
     }
   }
 
+  private static final String URI_RECIPE_SLUG_ID = "/recipe/%s/%d";
+
+  static String buildInfoUrl(RecipeMetadata recipe) {
+    return String.format(URI_RECIPE_SLUG_ID, recipe.getSlug(), recipe.getRecipeId());
+  }
+
   static class RecipeMetadataRecipeInfoAdapter implements RecipeInfo {
+
     private final RecipeMetadata metadata;
-    private final UriComponents infoUriComponents;
     private final List<SimilarInfo> similarRecipes;
 
-    RecipeMetadataRecipeInfoAdapter(
-        RecipeMetadata metadata,
-        UriComponents infoUriComponents,
-        List<SimilarInfo> similarRecipes) {
+    RecipeMetadataRecipeInfoAdapter(RecipeMetadata metadata, List<SimilarInfo> similarRecipes) {
       this.metadata = metadata;
       this.similarRecipes = similarRecipes;
-      this.infoUriComponents = infoUriComponents;
     }
 
     @Override
@@ -239,7 +253,7 @@ class ModelView {
 
     @Override
     public String infoUrl() {
-      return infoUriComponents.expand(metadata.getSlug(), metadata.getRecipeId()).toUriString();
+      return buildInfoUrl(metadata);
     }
 
     @Override
