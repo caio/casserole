@@ -5,6 +5,7 @@ import co.caio.cerberus.model.SearchResult;
 import co.caio.cerberus.search.Searcher;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
+import java.time.Duration;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
@@ -19,7 +20,14 @@ public class SearchService {
   public SearchService(Searcher searcher, MeterRegistry registry) {
     this.searcher = searcher;
 
-    this.timer = registry.timer("search_service_search_timer");
+    this.timer =
+        Timer.builder("search_service_search_timer")
+            .publishPercentiles(0.5, 0.95, 0.999)
+            .publishPercentileHistogram()
+            .minimumExpectedValue(Duration.ofMillis(1))
+            .maximumExpectedValue(Duration.ofSeconds(2))
+            .register(registry);
+
     // Meters use weak references, so we hold the state here
     // to keep it from getting collected
     // XXX Make this an AtomicInteger if we ever want to change it during runtime
