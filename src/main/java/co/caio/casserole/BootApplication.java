@@ -54,11 +54,6 @@ public class BootApplication {
     return conf.getPageSize();
   }
 
-  @Bean
-  int numRecipes(Searcher searcher) {
-    return searcher.numDocs();
-  }
-
   @Bean("searchCircuitBreaker")
   CircuitBreaker getSearchCircuitBreaker(MeterRegistry registry) {
     var cbRegistry = CircuitBreakerRegistry.ofDefaults();

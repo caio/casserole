@@ -45,11 +45,6 @@ class BootApplicationTest {
   @TestConfiguration
   static class TestConfig {
 
-    @Bean("numRecipes")
-    int numRecipes() {
-      return 1;
-    }
-
     @Bean
     Duration searchTimeout() {
       return Duration.ofMillis(100);
