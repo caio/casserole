@@ -6,7 +6,6 @@ import co.caio.cerberus.model.SearchQuery.DietSpec;
 import co.caio.cerberus.model.SearchQuery.RangedSpec;
 import co.caio.cerberus.model.SearchQuery.SortOrder;
 import java.util.Map;
-import java.util.Scanner;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
@@ -133,23 +132,19 @@ public class SearchParameterParser {
 
   public RangedSpec parseRange(String input) {
     try {
-      if (input.contains(",")) {
-        var scanner = new Scanner(input).useDelimiter(",");
 
-        int start = scanner.nextInt();
-        int end = scanner.nextInt();
+      int start, end;
+      var idx = input.indexOf(',');
 
-        // We encode a range like [x, infinity[ as x,0
-        var spec = RangedSpec.of(start, end == 0 ? Integer.MAX_VALUE : end);
-        if (scanner.hasNext()) {
-          throw new SearchParameterException("Invalid range: " + input);
-        }
-        return spec;
+      if (idx == -1) {
+        start = 0;
+        end = Integer.parseUnsignedInt(input);
       } else {
-        return RangedSpec.of(0, parseUnsignedInt(input));
+        start = Integer.parseUnsignedInt(input, 0, idx, 10);
+        end = Integer.parseUnsignedInt(input,idx + 1, input.length(), 10);
       }
-    } catch (SearchParameterException rethrown) {
-      throw rethrown;
+
+      return RangedSpec.of(start, end == 0 ? Integer.MAX_VALUE : end);
     } catch (Exception swallowed) {
       throw new SearchParameterException("Invalid range: " + input);
     }
