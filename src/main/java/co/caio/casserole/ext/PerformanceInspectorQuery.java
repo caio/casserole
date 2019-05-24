@@ -79,8 +79,8 @@ public class PerformanceInspectorQuery extends Query {
       }
     }
 
-    // More than one expensive term query, this may be slow
-    if (numExpensiveTermQueries > 1) {
+    // Every term matches too many documents
+    if (numExpensiveTermQueries == termClauses.size()) {
       logger.warn("Executing expensive lucene query:" + delegate);
     }
 
