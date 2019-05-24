@@ -62,9 +62,6 @@ public class SearchParameterParser {
             case "diet":
               builder.diet(parseDiet(value));
               break;
-            case "science":
-              // Ignored: handled on "diet" right above
-              break;
             case "page":
               // page starts from 1, not 0
               var pageNumber = parseUnsignedInt(value);
