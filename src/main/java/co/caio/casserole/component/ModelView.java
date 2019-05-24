@@ -40,17 +40,12 @@ class ModelView {
   private static final String DEFAULT_UNKNOWN_ERROR_SUBTITLE = "Unknown Error Cause";
 
   private final int pageSize;
-  private final int numRecipes;
   private final CircuitBreaker breaker;
   private final SidebarRenderer sidebarRenderer;
 
-  ModelView(
-      @Qualifier("searchPageSize") int pageSize,
-      @Qualifier("numRecipes") int numRecipes,
-      CircuitBreaker breaker) {
+  ModelView(@Qualifier("searchPageSize") int pageSize, CircuitBreaker breaker) {
     this.pageSize = pageSize;
     this.breaker = breaker;
-    this.numRecipes = numRecipes;
     this.sidebarRenderer = new SidebarRenderer();
   }
 
@@ -103,7 +98,6 @@ class ModelView {
 
     var searchBuilder =
         new SearchResultsInfo.Builder()
-            .numRecipes(numRecipes)
             .paginationStart(query.offset() + 1)
             .paginationEnd(result.recipeIds().size() + query.offset())
             .numMatching(result.totalHits());

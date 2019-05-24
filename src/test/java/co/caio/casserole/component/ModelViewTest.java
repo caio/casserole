@@ -36,7 +36,7 @@ class ModelViewTest {
     db.saveAll(
         Util.getSampleRecipes().map(RecipeMetadata::fromRecipe).collect(Collectors.toList()));
     METADATA_SERVICE = new MetadataService(db);
-    modelView = new ModelView(pageSize, Util.expectedIndexSize(), breaker);
+    modelView = new ModelView(pageSize, breaker);
   }
 
   private Document parseOutput(RockerModel rockerModel) {
