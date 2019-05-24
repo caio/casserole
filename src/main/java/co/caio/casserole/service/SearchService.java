@@ -22,6 +22,7 @@ public class SearchService {
     this.timer = registry.timer("search_service_search_timer");
     // Meters use weak references, so we hold the state here
     // to keep it from getting collected
+    // XXX Make this an AtomicInteger if we ever want to change it during runtime
     this.numRecipes = registry.gauge("search_service_num_recipes", searcher.numDocs());
   }
 
