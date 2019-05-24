@@ -4,11 +4,11 @@ import co.caio.casserole.index.Facet.Category;
 import co.caio.casserole.index.Facet.CategoryOption;
 import co.caio.cerberus.model.FacetData;
 import co.caio.cerberus.model.SearchQuery;
+import co.caio.cerberus.model.SearchQuery.DietSpec;
 import co.caio.cerberus.model.SearchQuery.RangedSpec;
 import co.caio.cerberus.model.SearchResult;
 import co.caio.tablier.model.FilterInfo;
 import co.caio.tablier.model.SidebarInfo;
-import java.util.Map.Entry;
 import org.springframework.web.util.UriComponentsBuilder;
 
 public class SidebarRenderer {
@@ -17,6 +17,8 @@ public class SidebarRenderer {
 
   private static final SearchResult EMPTY_SEARCH_RESULT = new SearchResult.Builder().build();
   private static final RangedSpec UNSELECTED_RANGE = RangedSpec.of(0, 0);
+  private static final DietSpec UNSELECTED_DIET = DietSpec.of("NONE", 1F);
+
   private static final FacetData EMPTY_FACET_DATA =
       new FacetData.Builder().dimension("EMPTY").build();
 
@@ -37,20 +39,9 @@ public class SidebarRenderer {
     var hasFacetData = !result.facets().isEmpty();
 
     var diet = new FilterInfo.Builder().name(Category.DIET.getTitle());
-    var selectedDiet =
-        query
-            .dietThreshold()
-            .entrySet()
-            .stream()
-            // NOTE getting the first key with a threshold set
-            //      this only works because the we don't allow multiple
-            //      and if we check for 1f (arguably the correct approach),
-            //      we end up breaking the render when using &science=
-            .filter(e -> e.getValue() > 0f)
-            .map(Entry::getKey)
-            .findFirst();
-    addCategoryOptions(diet, Category.DIET, selectedDiet.orElse("NONE"), result, uriBuilder);
-    diet.showCounts(hasFacetData && selectedDiet.isEmpty());
+    addCategoryOptions(
+        diet, Category.DIET, query.diet().orElse(UNSELECTED_DIET), result, uriBuilder);
+    diet.showCounts(hasFacetData && query.diet().isEmpty());
     builder.addFilters(diet.build());
 
     var numIngredient = new FilterInfo.Builder().name(Category.NUM_INGREDIENT.getTitle());
@@ -129,10 +120,6 @@ public class SidebarRenderer {
 
               if (isActive) {
                 uriBuilder.replaceQueryParam(category.getIndexKey());
-                // FIXME Shouldn't be here, but `science` is temporary, so...
-                if (category == Category.DIET) {
-                  uriBuilder.replaceQueryParam("science");
-                }
               } else {
                 uriBuilder.replaceQueryParam(category.getIndexKey(), opt.getIndexKey());
               }

@@ -1,6 +1,8 @@
 package co.caio.casserole.component;
 
+import co.caio.casserole.index.Facet.DietOption;
 import co.caio.cerberus.model.SearchQuery;
+import co.caio.cerberus.model.SearchQuery.DietSpec;
 import co.caio.cerberus.model.SearchQuery.RangedSpec;
 import co.caio.cerberus.model.SearchQuery.SortOrder;
 import java.util.Map;
@@ -59,8 +61,7 @@ public class SearchParameterParser {
               builder.carbohydrateContent(parseRange(value));
               break;
             case "diet":
-              var threshold = Float.parseFloat(params.getOrDefault("science", "1"));
-              builder.putDietThreshold(value, threshold);
+              builder.diet(parseDiet(value));
               break;
             case "science":
               // Ignored: handled on "diet" right above
@@ -106,6 +107,28 @@ public class SearchParameterParser {
         return SortOrder.CALORIES;
     }
     throw new SearchParameterException("Invalid sort order: " + order);
+  }
+
+  public DietSpec parseDiet(String input) {
+    try {
+      String name = input;
+      float threshold = 1.0F;
+
+      var idx = input.indexOf(':');
+
+      if (idx != -1) {
+        name = input.substring(0, idx);
+        threshold = Float.parseFloat(input.substring(idx + 1));
+      }
+
+      if (DietOption.indexKeyIsKnown(name)) {
+        return DietSpec.of(name, threshold);
+      }
+
+      throw new RuntimeException();
+    } catch (Exception swallowed) {
+      throw new SearchParameterException("Invalid diet: " + input);
+    }
   }
 
   public RangedSpec parseRange(String input) {
