@@ -24,6 +24,7 @@ public class ResourceConfiguration implements WebFluxConfigurer {
     registry
         .addResourceHandler("/css/*.css")
         .addResourceLocations("classpath:/tablier/css/")
+        .setCacheControl(CacheControl.maxAge(3, TimeUnit.DAYS))
         .resourceChain(true)
         .addResolver(new EncodedResourceResolver())
         .addResolver(new PathResourceResolver());
@@ -31,7 +32,7 @@ public class ResourceConfiguration implements WebFluxConfigurer {
     registry
         .addResourceHandler("/page/*")
         .addResourceLocations("classpath:/tablier/pages/")
-        .setCacheControl(CacheControl.maxAge(1, TimeUnit.HOURS))
+        .setCacheControl(CacheControl.maxAge(3, TimeUnit.DAYS))
         .resourceChain(true)
         .addResolver(new EncodedResourceResolver())
         .addResolver(new StaticHtmlResolver());
@@ -39,6 +40,7 @@ public class ResourceConfiguration implements WebFluxConfigurer {
     registry
         .addResourceHandler("/img/*")
         .addResourceLocations("classpath:/tablier/img/")
+        .setCacheControl(CacheControl.maxAge(3, TimeUnit.DAYS))
         .resourceChain(true)
         .addResolver(new PathResourceResolver());
   }

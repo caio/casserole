@@ -17,6 +17,7 @@ import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.junit.jupiter.api.BeforeEach;
@@ -28,6 +29,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Bean;
+import org.springframework.http.CacheControl;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -205,15 +207,21 @@ class BootApplicationTest {
   }
 
   @Test
-  void staticPageHasMaxAgeHeader() {
+  void classpathResourceContentHasMaxAge() {
+    List.of("/page/about", "/page/help", "/css/main.css", "/img/favicon.ico")
+        .forEach(this::assertCacheControl);
+  }
+
+  void assertCacheControl(String uri) {
     testClient
         .get()
-        .uri("/page/help")
+        .uri(uri)
         .exchange()
         .expectStatus()
         .isEqualTo(HttpStatus.OK)
         .expectHeader()
-        .valueEquals("Cache-Control", "max-age=3600");
+        .valueEquals(
+            HttpHeaders.CACHE_CONTROL, CacheControl.maxAge(3, TimeUnit.DAYS).getHeaderValue());
   }
 
   @Test
