@@ -138,7 +138,7 @@ public class SearchParameterParser {
         end = Integer.parseUnsignedInt(input);
       } else {
         start = Integer.parseUnsignedInt(input, 0, idx, 10);
-        end = Integer.parseUnsignedInt(input,idx + 1, input.length(), 10);
+        end = Integer.parseUnsignedInt(input, idx + 1, input.length(), 10);
       }
 
       return RangedSpec.of(start, end == 0 ? Integer.MAX_VALUE : end);
