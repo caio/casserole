@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import co.caio.casserole.ext.PerformanceInspectorQuery;
 import co.caio.cerberus.model.Recipe;
 import co.caio.cerberus.model.SearchQuery;
+import co.caio.cerberus.search.CategoryExtractor;
 import co.caio.cerberus.search.Indexer;
 import co.caio.cerberus.search.Searcher;
 import java.io.IOException;
@@ -30,7 +31,7 @@ class TermQueryRewritingPolicyTest {
     try {
       var dataDir = Files.createTempDirectory("policy-");
 
-      var indexer = new Indexer.Builder().createMode().dataDirectory(dataDir).build();
+      var indexer = Indexer.Factory.open(dataDir, CategoryExtractor.NOOP);
 
       // Index with 4 recipes. Heavy hitters are "until" and "cup" when
       // maxTermFrequency is 3.
@@ -40,12 +41,8 @@ class TermQueryRewritingPolicyTest {
       indexer.addRecipe(withWords(3, "until", "cup"));
       indexer.commit();
 
-      noPolicySearcher = indexer.buildSearcher();
-      searcher =
-          new Searcher.Builder()
-              .dataDirectory(dataDir)
-              .searchPolicy(new TermQueryRewritingPolicy(3))
-              .build();
+      noPolicySearcher = Searcher.Factory.open(dataDir);
+      searcher = Searcher.Factory.open(dataDir, new TermQueryRewritingPolicy(3));
     } catch (IOException wrapped) {
       throw new RuntimeException(wrapped);
     }

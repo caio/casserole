@@ -35,12 +35,7 @@ public class Lucene implements Runnable {
     }
 
     System.out.println("Initializing index at " + target);
-    var indexer =
-        new Indexer.Builder()
-            .categoryExtractor(new Facet().getCategoryExtractor())
-            .dataDirectory(target)
-            .createMode()
-            .build();
+    var indexer = Indexer.Factory.open(target, new Facet().getCategoryExtractor());
 
     System.out.println("Ingesting all recipes. This will take a while...");
 
