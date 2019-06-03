@@ -1,11 +1,11 @@
 package co.caio.casserole.index;
 
 import co.caio.cerberus.model.Recipe;
+import co.caio.cerberus.model.SearchQuery.DietSpec;
 import co.caio.cerberus.model.SearchQuery.RangedSpec;
 import co.caio.cerberus.model.SearchQuery.SortOrder;
 import co.caio.cerberus.search.CategoryExtractor;
 import java.util.List;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -159,9 +159,18 @@ public class Facet {
       this.indexKey = indexKey;
     }
 
+    public static boolean indexKeyIsKnown(String key) {
+      for (DietOption diet : values()) {
+        if (diet.indexKey.equals(key)) {
+          return true;
+        }
+      }
+      return false;
+    }
+
     @Override
     public boolean isActive(Object obj) {
-      return indexKey.equals(obj);
+      return obj instanceof DietSpec && indexKey.equals(((DietSpec) obj).name());
     }
 
     @Override
@@ -294,7 +303,8 @@ public class Facet {
         .entrySet()
         .stream()
         .filter(e -> e.getValue() == 1f)
-        .map(Entry::getKey) // Could collect and return here
+        .filter(e -> DietOption.indexKeyIsKnown(e.getKey()))
+        .map(e -> DietSpec.of(e.getKey(), e.getValue()))
         .flatMap(diet -> Category.DIET.getOptions().stream().filter(o -> o.isActive(diet)))
         .map(CategoryOption::getIndexKey)
         .collect(Collectors.toSet());

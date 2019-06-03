@@ -318,7 +318,7 @@ class ModelViewTest {
         123);
     checkTitle(
         "1 Result for: \"hard cheese\", with 3 filters applied. Page 1",
-        fulltext("\"hard cheese\"").calories(range).cookTime(range).addMatchDiet("keto"),
+        fulltext("\"hard cheese\"").calories(range).cookTime(range).diet("keto"),
         1);
   }
 

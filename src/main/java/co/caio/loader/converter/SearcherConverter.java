@@ -15,6 +15,6 @@ public class SearcherConverter implements ITypeConverter<Searcher> {
       throw new InvalidPathException(value, "Not a directory");
     }
 
-    return new Searcher.Builder().dataDirectory(baseDir).build();
+    return Searcher.Factory.open(baseDir);
   }
 }

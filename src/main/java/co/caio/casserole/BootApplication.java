@@ -40,10 +40,8 @@ public class BootApplication {
 
   @Bean
   Searcher getSearcher(SearchConfigurationProperties conf) {
-    return new Searcher.Builder()
-        .dataDirectory(conf.getLucene().getDirectory())
-        .searchPolicy(new TermQueryRewritingPolicy(200_000))
-        .build();
+    return Searcher.Factory.open(
+        conf.getLucene().getDirectory(), new TermQueryRewritingPolicy(200_000));
   }
 
   @Bean

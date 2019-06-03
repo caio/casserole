@@ -169,10 +169,7 @@ class SidebarRendererTest {
         .forEach(
             option -> {
               var query =
-                  new SearchQuery.Builder()
-                      .fulltext("*")
-                      .addMatchDiet(option.getIndexKey())
-                      .build();
+                  new SearchQuery.Builder().fulltext("*").diet(option.getIndexKey()).build();
               var sidebar = SIDEBAR_RENDERER.render(query, uriBuilder);
               var info = findFilterInfo(sidebar, Category.DIET.getTitle());
               var activeItems = findActive(info);
@@ -273,7 +270,7 @@ class SidebarRendererTest {
             .calories(nk)
             .fatContent(nf)
             .carbohydrateContent(nc)
-            .addMatchDiet(diet.getIndexKey())
+            .diet(diet.getIndexKey())
             .build();
 
     var sidebar = SIDEBAR_RENDERER.render(query, uriBuilder);
@@ -298,20 +295,6 @@ class SidebarRendererTest {
     var activeNutrition =
         findActive(nutritionInfo).stream().map(FilterOption::name).collect(Collectors.toSet());
     assertEquals(Set.of(nk.getTitle(), nf.getTitle(), nc.getTitle()), activeNutrition);
-  }
-
-  @Test
-  void removingSelectedDietAlsoRemovesScience() {
-    var query = new SearchQuery.Builder().fulltext("peanut").putDietThreshold("keto", 0.8f).build();
-    var uriBuilder = UriComponentsBuilder.fromUriString("/test?diet=keto&science=0.8");
-    var sidebar = SIDEBAR_RENDERER.render(query, uriBuilder);
-
-    var dietInfo = findFilterInfo(sidebar, Category.DIET.getTitle());
-    var active = findActive(dietInfo);
-    assertEquals(1, active.size());
-
-    var params = getQueryParams(active.get(0).href());
-    assertFalse(params.containsKey("science"));
   }
 
   @Test

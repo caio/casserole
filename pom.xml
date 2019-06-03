@@ -21,10 +21,12 @@
     <properties>
         <start-class>co.caio.casserole.BootApplication</start-class>
 
-        <cerberus.version>0.7.1</cerberus.version>
-        <tablier.version>0.6.0</tablier.version>
+        <cerberus.version>0.8.0</cerberus.version>
+        <tablier.version>0.6.1</tablier.version>
 
         <spring-boot.version>2.1.5.RELEASE</spring-boot.version>
+        <spring-jcl.version>5.1.7.RELEASE</spring-jcl.version>
+
         <resilience4j.version>0.15.0</resilience4j.version>
         <jsoup.version>1.12.1</jsoup.version>
         <picocli.version>3.9.5</picocli.version>
@@ -68,18 +70,30 @@
         </dependency>
 
         <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-classic</artifactId>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-jcl</artifactId>
+            <version>${spring-jcl.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-logging</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-webflux</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-log4j2</artifactId>
         </dependency>
 
         <dependency>

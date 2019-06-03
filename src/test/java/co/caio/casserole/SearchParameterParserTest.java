@@ -4,7 +4,9 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import co.caio.casserole.component.SearchParameterParser;
 import co.caio.casserole.component.SearchParameterParser.SearchParameterException;
+import co.caio.casserole.index.Facet.DietOption;
 import co.caio.cerberus.model.SearchQuery;
+import co.caio.cerberus.model.SearchQuery.DietSpec;
 import co.caio.cerberus.model.SearchQuery.RangedSpec;
 import co.caio.cerberus.model.SearchQuery.SortOrder;
 import java.util.Collections;
@@ -46,10 +48,10 @@ class SearchParameterParserTest {
         parser.buildQuery(input), builder.carbohydrateContent(RangedSpec.of(0, 30)).build());
 
     input.put("diet", "keto");
-    assertEquals(parser.buildQuery(input), builder.addMatchDiet("keto").build());
+    assertEquals(parser.buildQuery(input), builder.diet("keto").build());
 
-    input.put("science", "0.75");
-    assertEquals(parser.buildQuery(input), builder.putDietThreshold("keto", 0.75f).build());
+    input.put("diet", "keto:0.75");
+    assertEquals(parser.buildQuery(input), builder.diet("keto", 0.75f).build());
 
     input.put("page", "1");
     assertEquals(parser.buildQuery(input), builder.build());
@@ -116,5 +118,34 @@ class SearchParameterParserTest {
     assertThrows(SearchParameterException.class, () -> parser.parseRange("10,10,10"));
     // And that inverted ranges are handled as errors
     assertThrows(SearchParameterException.class, () -> parser.parseRange("5,1"));
+  }
+
+  @Test
+  void parseDiet() {
+    assertEquals(DietSpec.of("keto", 0.57F), parser.parseDiet("keto:0.57"));
+    assertEquals(DietSpec.of("paleo", 1F), parser.parseDiet("paleo"));
+  }
+
+  @Test
+  void canParseAllKnownDiets() {
+    for (DietOption dietOption : DietOption.values()) {
+      assertDoesNotThrow(() -> parser.parseDiet(dietOption.getIndexKey()));
+      assertDoesNotThrow(() -> parser.parseDiet(dietOption.getIndexKey() + ":0.42"));
+    }
+  }
+
+  @Test
+  void refuseToParseUnknownDiet() {
+    assertThrows(SearchParameterException.class, () -> parser.parseDiet("unknown"));
+  }
+
+  @Test
+  void refuseToParseDietWithExtraData() {
+    var validInput = DietOption.KETO.getIndexKey() + ":0.9";
+    assertDoesNotThrow(() -> parser.parseDiet(validInput));
+    assertThrows(SearchParameterException.class, () -> parser.parseDiet(validInput + "rubbish"));
+    assertThrows(
+        SearchParameterException.class, () -> parser.parseDiet(validInput + ":moreTokens"));
+    assertThrows(SearchParameterException.class, () -> parser.parseDiet(validInput + ":"));
   }
 }
