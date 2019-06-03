@@ -141,7 +141,7 @@ public class PerformanceInspectorQuery extends Query {
   public boolean equals(Object obj) {
     if (obj instanceof PerformanceInspectorQuery) {
       return ((PerformanceInspectorQuery) obj).maxDocFrequency == maxDocFrequency
-          && delegate.equals(obj);
+          && delegate.equals(((PerformanceInspectorQuery) obj).delegate);
     } else {
       return false;
     }
