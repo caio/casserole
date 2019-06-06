@@ -208,8 +208,7 @@ class BootApplicationTest {
 
   @Test
   void classpathResourceContentHasMaxAge() {
-    List.of("/page/about", "/page/help", "/css/main.css", "/img/favicon.ico")
-        .forEach(this::assertCacheControl);
+    List.of("/page/about", "/css/main.css", "/img/logo16.png").forEach(this::assertCacheControl);
   }
 
   void assertCacheControl(String uri) {
@@ -226,7 +225,8 @@ class BootApplicationTest {
 
   @Test
   void canFetchFavicon() {
-    assertGet("/img/favicon.ico", HttpStatus.OK, new MediaType("image", "x-icon"));
+    assertGet("/img/logo32.png", HttpStatus.OK, new MediaType("image", "png"));
+    assertGet("/img/logo16.png", HttpStatus.OK, new MediaType("image", "png"));
   }
 
   @Test
