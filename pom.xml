@@ -11,7 +11,7 @@
     <artifactId>casserole</artifactId>
     <groupId>co.caio.casserole</groupId>
     <packaging>jar</packaging>
-    <version>0.0.2-SNAPSHOT</version>
+    <version>0.0.2</version>
 
     <name>gula.recipes Web UI</name>
     <description>Spring Boot Webflux.fn</description>
@@ -312,4 +312,8 @@
             </build>
         </profile>
     </profiles>
+
+  <scm>
+    <tag>0.0.2</tag>
+  </scm>
 </project>
