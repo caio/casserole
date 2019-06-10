@@ -174,9 +174,45 @@ class ModelView {
             .build());
   }
 
+  private String getRecipeDescription(RecipeMetadata recipe) {
+    var sb = new StringBuilder();
+
+    recipe
+        .getCalories()
+        .ifPresent(
+            kcal -> {
+              sb.append("Calories: ");
+              sb.append(kcal);
+            });
+
+    recipe
+        .getTotalTime()
+        .ifPresent(
+            totalTime -> {
+              if (sb.length() > 0) {
+                sb.append(", ");
+              }
+              sb.append(totalTime);
+              sb.append(" minutes");
+            });
+
+    if (sb.length() > 0) {
+      sb.append(". ");
+    }
+    sb.append(recipe.getNumIngredients());
+    sb.append(" ingredients: ");
+    sb.append(String.join(", ", recipe.getIngredients()));
+
+    return sb.toString();
+  }
+
   RockerModel renderSingleRecipe(RecipeMetadata recipe, MetadataService db) {
     return Recipe.template(
-        new SiteInfo.Builder().title(recipe.getName()).searchIsAutoFocus(false).build(),
+        new SiteInfo.Builder()
+            .title(recipe.getName())
+            .description(getRecipeDescription(recipe))
+            .searchIsAutoFocus(false)
+            .build(),
         buildAdapter(recipe, db));
   }
 
